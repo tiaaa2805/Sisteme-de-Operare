@@ -7,6 +7,7 @@
 #include<string.h>
 #include <errno.h>
 #include<time.h>
+#include<dirent.h>
 
 
 #define MAX 50
@@ -25,7 +26,7 @@ typedef struct{
 }treasure;
 int createdir(const char *hunt)
 {char sir[MAXSTR];
-  snprintf(sir,MAXSTR,"%s%s","treasure_hunts/", hunt);
+  snprintf(sir,MAXSTR,"%s", hunt);
   int pp=mkdir(sir,0777);
     if(pp==-1){
       if(errno==EEXIST)
@@ -40,11 +41,11 @@ int createdir(const char *hunt)
 int add(treasure *tr, const char *hunt)
 {
   char sir[MAXSTR];
-    snprintf(sir,MAXSTR,"%s%s","treasure_hunts/", hunt);
+    snprintf(sir,MAXSTR,"%s/treasure.dat", hunt);
   
      
-    if(createdir(hunt)==1)
-    { int fd=open(sir, O_CREAT| O_RDWR,0666);
+    if(createdir(hunt)==0)
+    { int fd=open(sir, O_CREAT| O_RDWR| O_APPEND,0666);
       if(fd==-1)
 	{
 	  printf("Eroare la deschidere fisier treasure");
@@ -65,15 +66,11 @@ int add(treasure *tr, const char *hunt)
 void list(const char *hunt)
 {
    char sir[MAXSTR];
-    snprintf(sir,MAXSTR,"%s%s","treasure_hunts/", hunt);
-    if(strlen(sir)<0)
-      {
-	printf("Probleme la copierea cailor");
-	return;
-      }
+    snprintf(sir,MAXSTR,"%s/treasure.dat", hunt);
+  
     struct stat st;
     if(stat(sir,&st)<0){
-      printf("Nu s ai adaugat informatiile fisierului");
+      printf("Nu s au adaugat informatiile fisierului");
       return;
     }
   printf("Numele hunt-ului este : %s\n", hunt);
@@ -89,7 +86,7 @@ void list(const char *hunt)
   lseek(fd,0,SEEK_SET);
   while(read(fd,&t,sizeof(treasure))==sizeof(treasure))
     {
-      printf("Treasure id : %d \n Numele : %s \n Clue : %s \n Value : %d \n Coordonatele : %f,%f \n\n", t.id, t.name,t.clue,t.value,t.coordonate.longitudine, t.coordonate.latitudine);
+      printf("Treasure id : %d \n Numele : %s \n Clue : %s\n Value : %d \n Coordonatele : %f,%f \n\n", t.id, t.name,t.clue,t.value,t.coordonate.longitudine, t.coordonate.latitudine);
     }
   close(fd);
 }
@@ -114,6 +111,7 @@ int main(int argc, char **argv)
       printf("introduceti indiciul\n ");
       getchar();
       fgets(tr.clue,200,stdin);
+      tr.clue[strspn(tr.clue,"\n")]='\0';
       printf("introduceti value \n");
       scanf("%d", &tr.value);
       if(add(&tr, hunt)==1)
@@ -123,6 +121,7 @@ int main(int argc, char **argv)
     }
   if(strcmp(operatia,"--list")==0)
     {
+      list(hunt);
     }
   if(strcmp(operatia,"--view")==0)
     {
