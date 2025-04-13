@@ -5,8 +5,8 @@
 #define MAXCLUE 200
 #define MAXSTR 200
 typedef struct{
-  float longitudine;
-  float latitudine;
+  double longitudine;
+  double latitudine;
 }gps;
 typedef struct{
   int id;
@@ -16,8 +16,10 @@ typedef struct{
   int value;
 }treasure;
 int nrtreasure(int fd);
-int createdir(const char *hunt);
-void adaugarea(treasure *tr);
+bool checkcoordonate(double a, double b);
+char *userr();
+void istoric_log(const char *hunt, const char *user, const char *action);
+int adaugarea(treasure *tr);
 int add(treasure *tr, const char *hunt);
 void list(const char *hunt);
 void view(const char *hunt, const char *trea);
