@@ -15,12 +15,13 @@ typedef struct{
   char clue[MAXCLUE];
   int value;
 }treasure;
+int nrtreasure(int fd);
 int createdir(const char *hunt);
 void adaugarea(treasure *tr);
 int add(treasure *tr, const char *hunt);
 void list(const char *hunt);
 void view(const char *hunt, const char *trea);
-void remove_hunt(const char *hunt, int idd);
-void remove_treasure(const char *hunt, const char *treasu);
+void remove_hunt(const char *hunt);
+void remove_treasure(const char *hunt, int id);
 
 #endif
