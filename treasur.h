@@ -15,6 +15,7 @@ typedef struct{
   char clue[MAXCLUE];
   int value;
 }treasure;
+void functie(int sig);
 int nrtreasure(int fd);
 bool checkcoordonate(double a, double b);
 char *userr();
