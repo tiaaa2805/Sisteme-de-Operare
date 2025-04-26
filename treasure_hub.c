@@ -91,7 +91,7 @@ int main()
 	           exit(1);
         	}
 	  else
-                   {close(pp[1]);
+                   {close(pp[0]);
 	             printf("Monitorul functioneaza cu acest pid %d\n",monitor_pid);
 	           }
       }
@@ -138,9 +138,8 @@ int main()
 		  {
 		    break;
 		  }
-	      close(pp[1]);
-            break;
-	   default:printf("Aceasta comanda este necunoscuta \n");
+	      
+           
 	      
           }
        }
