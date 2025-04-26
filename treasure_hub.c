@@ -4,6 +4,7 @@
 #include<signal.h>
 #include<string.h>
 #include<error.h>
+#include<sys/wait.h>
 #include<unistd.h>
 #define Max 256
 #define MAX 356
@@ -35,7 +36,12 @@ int command(const char *buff)
 }
 void verificare(int sig)
 {int status;
-  waitpid(monitor_pid,&status,0);
+  pid_t oo=waitpid(monitor_pid,&status,0);
+  if(oo==-1)
+    {
+      perror("Eroare la waitpid : ");
+      return;
+    }
   monitor_execution=1;
   if(WIFEXITED(status))
     {
@@ -47,6 +53,7 @@ void verificare(int sig)
 void sendcommand(const char *cc)
 {
    write(pp[1],cc,strlen(cc));
+   write(pp[1],"\n",1);
       kill(monitor_pid,SIGUSR1);
      
 }
@@ -138,7 +145,7 @@ int main()
 		  {
 		    break;
 		  }
-	      
+	   default:printf("Comanda necunoscuta \n");
            
 	      
           }

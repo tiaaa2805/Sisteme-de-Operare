@@ -17,7 +17,7 @@ void functie(int sig)
   printf("Am primit semnalele !!\n");
   fflush(stdout);
   char operatia[Max], hunt[Max], treas[Max];
-  int tre;
+  
   if(fgets(operatia,Max,stdin)==NULL)
     {
       printf("Nu s-a citit nicio operatie !!!!\n");
@@ -104,7 +104,7 @@ int main()
   sa.sa_handler=functie;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags=SA_RESTART;
-  sigaction(SIGCHLD,&sa,NULL);
+  sigaction(SIGUSR1,&sa,NULL);
   printf("Acum primim semnalele \n");
   while(1)
     pause();
