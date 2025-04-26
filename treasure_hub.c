@@ -52,9 +52,15 @@ void verificare(int sig)
 }
 void sendcommand(const char *cc)
 {
-   write(pp[1],cc,strlen(cc));
+  if( write(pp[1],cc,strlen(cc))==-1)
+    {
+      printf("Eroare la scriere in pipe!!!!\n");
+      return;
+    }
    write(pp[1],"\n",1);
+   sleep(1000000);
       kill(monitor_pid,SIGUSR1);
+      printf("S-a primit semnalul SIGUSR1\n");
      
 }
 int main()
