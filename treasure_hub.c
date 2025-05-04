@@ -58,7 +58,7 @@ void sendcommand(const char *cc)
       return;
     }
    write(pp[1],"\n",1);
-   sleep(1000000);
+   close(pp[1]);
       kill(monitor_pid,SIGUSR1);
       printf("S-a primit semnalul SIGUSR1\n");
      
@@ -157,5 +157,6 @@ int main()
           }
        }
     }
+  
   return 0;
 }

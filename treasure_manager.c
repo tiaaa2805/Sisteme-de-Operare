@@ -104,9 +104,16 @@ int main()
   sa.sa_handler=functie;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags=SA_RESTART;
-  sigaction(SIGUSR1,&sa,NULL);
+  
+  if(sigaction(SIGUSR1,&sa,NULL)==-1)
+    {
+      perror("Eroare la sigaction\n");
+      exit(1);
+    }
   printf("Acum primim semnalele \n");
   while(1)
-    pause();
+    {
+      pause();
+    }
   return 0;
 }
