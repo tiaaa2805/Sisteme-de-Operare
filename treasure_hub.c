@@ -21,11 +21,26 @@ struct stringtoValue words[]={
   {"stop_monitor",5},
   {"exit",6}
 };
-
-
 pid_t monitor_pid=-1;
 volatile sig_atomic_t monitor_execution=0;
 volatile sig_atomic_t monitor_stop=0;
+void write_intxt(const char *c)
+{
+  int fd=open("comenzi.txt", O_WRONLY,O_CREAT);
+  if(fd==-1)
+    {
+      perror("eroare la deschiderea fisierului de scris \n");
+      return;
+    }
+  size_t len=sizeof(char)*strlen(c);
+  if(write(fd,c,len)!=sizeof(len))
+    {
+      perror("eroare ;a citire \n");
+      close(fd);
+      return ;
+    }
+  close(fd);
+}
 int command(const char *buff)
 {
   int i;
@@ -45,7 +60,7 @@ void verificare(int sig)
   monitor_execution=-1;
   if(WIFEXITED(status))
     {
-      printf("Monitorul s-a inchis cu urmatorul cod  %d", WIFEXITED(status));
+      printf("Monitorul s-a inchis cu urmatorul cod  %d", WEXISTATUS(status));
     }
   else
     printf("Monitorul nu s-a inchis normal\n");
@@ -83,6 +98,7 @@ void sendcommand(const char *cc)
     }
   if(strcmp(cc, "--stop_monitor")==0)
     {
+     
        if(kill(monitor_pid,SIGTERM)==-1)
 	{
 	  perror("Trimiterea semnalului a dat o eroare ");
@@ -111,7 +127,7 @@ int main()
     buff[strcspn(buff, "\n")]='\0';
     if(command(buff)==1)
       {printf("Se verificam daca monitorul este pornit pentru inceput\n");
-         if(monitor_execution==1 && monitor_pid==-1 )
+         if(monitor_execution==-1 || monitor_pid!=1 )
         	{printf("Monitorul s a oprit!\n");
 	            exit(1);
 	         }
@@ -148,19 +164,19 @@ int main()
               sendcommand("--list_hunts" );
               break;
             case 3:printf("S-a optat pentru listarea treasure-urilor\n");
-	      /*  printf("Introduceti numele huntului \n");
+	      printf("Introduceti numele huntului \n");
               fgets(buff2,Max,stdin);
-              buff2[strcspn(buff2,"\n")]='\0';*/
+              buff2[strcspn(buff2,"\n")]='\0';
               snprintf(comprim, MAX,"--list_treasures");
               sendcommand(comprim);
               break;
             case 4:printf("S-a optat pentru vizualizarea treasure-ului specificat \n");
-              /*printf("Introduceti pentru inceput hunt-ul\n");
+              printf("Introduceti pentru inceput hunt-ul\n");
               fgets(buff2,Max,stdin);
               buff2[strcspn(buff2,"\n")]='\0';
               printf("Introduceti aum treasure-ul cautat \n");
               fgets(buf3,70,stdin);
-              buf3[strcspn(buf3,"\n")]='\0';*/
+              buf3[strcspn(buf3,"\n")]='\0';
               snprintf(comprim, MAX,"--view_treasure");
               sendcommand(comprim);
            break;
