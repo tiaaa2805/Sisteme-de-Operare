@@ -2,6 +2,7 @@
 #include<stdint.h>
 #include<stdlib.h>
 #include<signal.h>
+#include<fcntl.h>
 #include<string.h>
 #include<error.h>
 #include<sys/wait.h>
@@ -26,14 +27,14 @@ volatile sig_atomic_t monitor_execution=0;
 volatile sig_atomic_t monitor_stop=0;
 void write_intxt(const char *c)
 {
-  int fd=open("comenzi.txt", O_WRONLY,O_CREAT);
+  int fd=open("comenzi.txt", O_WRONLY|O_CREAT|O_TRUNC, 0666);
   if(fd==-1)
     {
       perror("eroare la deschiderea fisierului de scris \n");
       return;
     }
   size_t len=sizeof(char)*strlen(c);
-  if(write(fd,c,len)!=sizeof(len))
+  if(write(fd,c,len)!=len)
     {
       perror("eroare ;a citire \n");
       close(fd);
@@ -60,7 +61,7 @@ void verificare(int sig)
   monitor_execution=-1;
   if(WIFEXITED(status))
     {
-      printf("Monitorul s-a inchis cu urmatorul cod  %d", WEXISTATUS(status));
+      printf("Monitorul s-a inchis cu urmatorul cod  %d", WEXITSTATUS(status));
     }
   else
     printf("Monitorul nu s-a inchis normal\n");
@@ -69,6 +70,7 @@ void sendcommand(const char *cc)
 {
   if(strcmp(cc, "--list_hunt")==0)
     {
+      write_intxt(cc);
       if(kill(monitor_pid, SIGUSR1)==-1)
 	{ perror("Trimiterea semnalului a dat o eroare ");
 	}
@@ -76,8 +78,9 @@ void sendcommand(const char *cc)
 	{ printf("S-a trimis semnalul pentru list_hunt \n"); 
 	}
     }
-  if(strcmp(cc,"--list_treasures")==0)
+  if(strncmp(cc,"--list_treasures ",17)==0)
     {
+      write_intxt(cc);
       if(kill(monitor_pid,SIGUSR2)==-1)
 	{ perror("Trimiterea semnalului a dat o eroare ");
 	}
@@ -85,8 +88,9 @@ void sendcommand(const char *cc)
 	{ printf("S-a trimis semnalul pentru list_treasures\n"); 
 	}
     }
-  if(strcmp(cc,"--view_treasure")==0)
+  if(strncmp(cc,"--view_treasure ",16)==0)
     {
+      write_intxt(cc);
       if(kill(monitor_pid,SIGINT)==-1)
 	{
 	  perror("Trimiterea semnalului a dat o eroare ");
@@ -127,7 +131,7 @@ int main()
     buff[strcspn(buff, "\n")]='\0';
     if(command(buff)==1)
       {printf("Se verificam daca monitorul este pornit pentru inceput\n");
-         if(monitor_execution==-1 || monitor_pid!=1 )
+         if(monitor_execution==0 || monitor_pid==-1 )
         	{printf("Monitorul s a oprit!\n");
 	            exit(1);
 	         }
