@@ -12,24 +12,24 @@
 #include<stdbool.h>
 #include"treasur.h"
 #define Max 235
-void functie(int sig)
+
+int main(int argc, char *argv[])
 {
-  printf("Am primit semnalele !!\n");
-  fflush(stdout);
-  char operatia[Max], hunt[Max], treas[Max];
-  
-  if(fgets(operatia,Max,stdin)==NULL)
+  if(argc<2)
     {
-      printf("Nu s-a citit nicio operatie !!!!\n");
-      return;
+      printf("Prea putine argumente \n");
+      return 0;
     }
-  operatia[strcspn(operatia,"\n")]='\0';
+   char operatia[Max], hunt[Max], treas[Max];
+   strcpy(operatia,argv[1]);
+   strcpy(hunt,argv[2]);
+   strcpy(treas,argv[3]);
    char *use=userr();
-   if(strncmp(operatia,"--add ", 6)==0)
+   if(strcmp(operatia,"--add")==0)
     {
       printf("Ati optat pentru introducerea datelor legate treasure \n");
       treasure tr;
-      snprintf(hunt,Max,"%s",operatia+6);
+      snprintf(hunt,Max,"%s",operatia);
       if(adaugarea(&tr)==1 && add(&tr, hunt)==1)
 	    {
 	      printf("Am creat noul joc/adaugat noul treasure in acest hunt \n");
@@ -41,7 +41,7 @@ void functie(int sig)
 	 }
     }
   else{
-    if(strncmp(operatia,"--list ", 7)==0)
+    if(strcmp(operatia,"--list")==0)
 	    {
 	      snprintf(hunt,Max,"%s ", operatia+7);
 	      printf("Ati optat pentru listarea datelor \n");
@@ -49,17 +49,15 @@ void functie(int sig)
 	      istoric_log(hunt,use,"--list");
 	    }
 	  else{
-	    if(strncmp(operatia,"--view ", 7)==0)
+	    if(strcmp(operatia,"--view" )==0)
 		   {
 		     printf("Ati optat pentru listarea datelor legate de un treasure \n");
-		       snprintf(hunt,Max,"%s ", operatia+7);
-		       int localizare=strcspn(hunt," ");
-		       snprintf(treas,Max,"%s",hunt+localizare);
+		       
 		     view(hunt,treas);
 		     istoric_log(hunt,use,"--view");
 		   }
 		  else {
-		    if(strncmp(operatia,"--remove_hunt ", 14)==0)
+		    if(strcmp(operatia,"--remove_hunt")==0)
 			   {
 			     printf("Ati optat pentru stergerea unui hunt \n");
 			       snprintf(hunt,Max,"%s ", operatia+14);
@@ -67,20 +65,18 @@ void functie(int sig)
 			     remove_hunt(hunt);
 			   }
 			 else {
-			   if(strncmp(operatia,"--remove_treasure ", 18)==0)
+			   if(strcmp(operatia,"--remove_treasure")==0)
 			     {int idd;
 				     printf("Ati optat pentru stergerea unui treasure din huntul %s\n",hunt);
-				      snprintf(hunt,Max,"%s ", operatia+18);
-				      int localizare=strcspn(hunt," ");
-		                      snprintf(treas,Max,"%s",hunt+localizare);
+				      
 				      idd=atoi(treas);
 				      istoric_log(hunt,use,"--remove_treasure");
 				     remove_treasure(hunt,idd);
 				    
 				   }
-				 else
+			   /*else
 				   {
-				     if(strcmp(operatia,"--stop_monitor")==0)
+				      if(strcmp(operatia,"--stop_monitor")==0)
 				       {
 					 printf("Monitorul se v-a opri!\n");
 					 usleep(5000000);
@@ -89,31 +85,13 @@ void functie(int sig)
 				     else
 				       {
 					 printf("Nu ati introdus niciuna dintre operatiile propuse! \n");
-				       }
-				   }
+					 }
+				      }*/
 			 }
 		  }
 	  }
   }
   
  
-}
-int main()
-{
-  struct sigaction sa;
-  sa.sa_handler=functie;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags=SA_RESTART;
-  
-  if(sigaction(SIGUSR1,&sa,NULL)==-1)
-    {
-      perror("Eroare la sigaction\n");
-      exit(1);
-    }
-  printf("Acum primim semnalele \n");
-  while(1)
-    {
-      pause();
-    }
   return 0;
 }
