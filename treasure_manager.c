@@ -22,14 +22,14 @@ int main(int argc, char *argv[])
     }
    char operatia[Max], hunt[Max], treas[Max];
    strcpy(operatia,argv[1]);
-   strcpy(hunt,argv[2]);
-   strcpy(treas,argv[3]);
+ 
+  
    char *use=userr();
    if(strcmp(operatia,"--add")==0)
     {
       printf("Ati optat pentru introducerea datelor legate treasure \n");
       treasure tr;
-      snprintf(hunt,Max,"%s",operatia);
+      strcpy(hunt,argv[2]);
       if(adaugarea(&tr)==1 && add(&tr, hunt)==1)
 	    {
 	      printf("Am creat noul joc/adaugat noul treasure in acest hunt \n");
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
   else{
     if(strcmp(operatia,"--list")==0)
 	    {
-	      snprintf(hunt,Max,"%s ", operatia+7);
+	       strcpy(hunt,argv[2]);
 	      printf("Ati optat pentru listarea datelor \n");
 	      list(hunt);
 	      istoric_log(hunt,use,"--list");
@@ -52,7 +52,8 @@ int main(int argc, char *argv[])
 	    if(strcmp(operatia,"--view" )==0)
 		   {
 		     printf("Ati optat pentru listarea datelor legate de un treasure \n");
-		       
+		       strcpy(hunt,argv[2]);
+		        strcpy(treas,argv[3]);
 		     view(hunt,treas);
 		     istoric_log(hunt,use,"--view");
 		   }
@@ -60,7 +61,7 @@ int main(int argc, char *argv[])
 		    if(strcmp(operatia,"--remove_hunt")==0)
 			   {
 			     printf("Ati optat pentru stergerea unui hunt \n");
-			       snprintf(hunt,Max,"%s ", operatia+14);
+			        strcpy(hunt,argv[2]);
 			      istoric_log(hunt,use,"--remove_hunt");
 			     remove_hunt(hunt);
 			   }
@@ -68,7 +69,8 @@ int main(int argc, char *argv[])
 			   if(strcmp(operatia,"--remove_treasure")==0)
 			     {int idd;
 				     printf("Ati optat pentru stergerea unui treasure din huntul %s\n",hunt);
-				      
+				       strcpy(hunt,argv[2]);
+				       strcpy(treas,argv[3]);
 				      idd=atoi(treas);
 				      istoric_log(hunt,use,"--remove_treasure");
 				     remove_treasure(hunt,idd);
