@@ -58,10 +58,11 @@ void verificare(int sig)
       perror("Eroare la waitpid : ");
       return;
     }
+  
   monitor_execution=-1;
   if(WIFEXITED(status))
     {
-      printf("Monitorul s-a inchis cu urmatorul cod  %d", WEXITSTATUS(status));
+      printf("Monitorul s-a inchis cu urmatorul cod  %d  (0---inseamna succes, altceva----probleme)\n", WEXITSTATUS(status));
     }
   else
     printf("Monitorul nu s-a inchis normal\n");
@@ -121,7 +122,7 @@ int main()
   struct sigaction sa;
   sa.sa_handler=verificare;
   sigemptyset(&sa.sa_mask);
-  sa.sa_flags=0;
+  sa.sa_flags=SA_RESTART;
   sigaction(SIGCHLD,&sa,NULL);
   printf("Urmatoarele comenzi disponibile pentru aceasta interfata sunt:\n\t start_monitor---pornirea monitorului,care este obligatorie:\n\t list_hunts---afiseaaza hunturile si numarul loc\n\t list_treasures---afiseaza toate treasure-urile din hunt-ul respectiv\n\t view_treasure---afiseaza detaliile legate de un treasure, dintr-un hunt\n\t stop_monitor---o actiune necesara la fial, de oprire a monitorului\n\t exit---o actiune care verifica daca monitorul inca ruleaza, in caz afirmativ printeaza o eroare, altfel il opreste\n\nIntroduceti comanda dorita\n");
   char buff[Max],buff2[Max], comprim[MAX], buf3[70];
@@ -131,29 +132,28 @@ int main()
     buff[strcspn(buff, "\n")]='\0';
     if(command(buff)==1)
       {printf("Se verificam daca monitorul este pornit pentru inceput\n");
-         if(monitor_execution==0 || monitor_pid==-1 )
-        	{printf("Monitorul s a oprit!\n");
-	            exit(1);
-	         }
-        printf("Monitorul era/este pornit!\n");
+         if(monitor_execution==0 &&  monitor_pid==-1 )
+        	{  printf("Monitorul era/este pornit!\n");
         monitor_pid=fork();
-         if(monitor_pid<0)
+        if(monitor_pid<0)
 	   {
 	     perror("Eroare la fork : ");
 	     exit(-1); 
 	   }
 	 monitor_execution=1;
-         if(monitor_pid==0)
+          if(monitor_pid==0)
         	{
-	          
-	           execl("./treasure_manager", "./treasure_manager",NULL);
-		   perror("eroare pentru execl\n");
-	           exit(1);
+	           execl("./monitor", "./monitor",NULL);
+		   /// perror("eroare pentru execl\n");
+	           exit(0);
         	}
-	  else
-                   {
-	             printf("Monitorul functioneaza cu acest pid %d\n",monitor_pid);
-	           }
+	   printf("Monitorul functioneaza cu acest pid %d\n",monitor_pid);
+         }
+	 else
+	   {
+	           printf("Monitorul s a oprit!\n");
+	            exit(1);
+	   }
       }
     else
       {
@@ -199,8 +199,6 @@ int main()
 	      exit(0);
 	     break;
 	   default:printf("Comanda necunoscuta \n");
-           
-	      
           }
        }
     }
