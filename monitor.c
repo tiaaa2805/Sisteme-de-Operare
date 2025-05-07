@@ -12,9 +12,10 @@
 #include<stdbool.h>
 #include"treasur.h"
 #define Max 500
+int ls=0;
 volatile sig_atomic_t monitor_execution=0;
 volatile sig_atomic_t monitor_stop=0;
-void readdetails()
+char  *readdetails()
 {
   int fd=open("comenzi.txt",O_RDONLY,S_IRUSR);
   if(fd==-1)
@@ -22,7 +23,7 @@ void readdetails()
       perror("Eroare la deschiderea firierului pentru citirea comenzilor\n");
       return;
     }
-   lseek(fd,0,SEEK_SET);
+  lseek(fd,ls*sizeof(char),SEEK_SET);
    char linie[256];
    int i=0;
   while(read(fd,linie,1)==1)
@@ -39,20 +40,32 @@ void readdetails()
 	  break;
 	}
     }
-  printf("Comanda preluata din text este %s\n");
+  ls++;
+  printf("Comanda preluata din text este %s\n",linie);
+  printf("\nNe ocupam de transmiterea detaliilor\n");
   close(fd);
+  return linie;
 }
 void handler_view_treasure()
 {
+  char op[Max], hunt[Max], tres[Max];
+  op=readdetails();
+  int len=strcspn(op," ");
+  int len2=strcspn(op+len+1," ");
+  strncpy(hunt,op+len+1,streln(op)-len2);
+  strcpy(tres,op+len2+1);
   if(monitor_stop==0)
-    view_treasure();
+    view(hunt,tres);
   else
     printf("Eroare, monitor posibil inchis!\n");
 }
-void handler_list_treasure()
+void handler_list_treasures()
 {
+  char op[Max];
+  op=readdetails();
+  int len=strcspn(op," ");
   if(monitor_stop==0)
-    list_treasures();
+    list(op+len+1);
   else
     printf("Eroare, monitor posibil inchis!\n");
 }
@@ -60,6 +73,7 @@ void handler_list_treasure()
 void handler_stop_monitor()
 {
     usleep(5000000);
+    printf("Monitorul se afla in procesul de inchidere\n");
     monitor_stop=-1;
     exit(0);
 }
@@ -73,7 +87,7 @@ void handler_sigc()
     }
   printf("Monitorul are acest status %d\n", WEXISTATUS(status));
 }
-void listaredirector()
+void handler_list_directory()
 {
   char cale[Max];
   DIR *fd=opendir(".");
@@ -95,6 +109,7 @@ void listaredirector()
 		    {
 		      if(strcmp(citim2->d_nume,".")==0 || strcmp(citim2->d_nume,"..")==0)
 			continue;
+		      printf("Numele huntului este %s\n",citim2->d_nume);
 		      if(strstr(citim2->d_nume,".dat")!=NULL)
 			{
 			   snprintf(cale,Max,"%s/%s",director,citim2->d_nume);
@@ -104,6 +119,7 @@ void listaredirector()
 		           close(fisier);
 			   break;
 			}
+		      
 		    }
 		  
 		}
@@ -124,18 +140,25 @@ void setup_for_handler(int sig)
 {
   switch(sig)
     {
-    case SIGUSR1:listaredirector();
+    case SIGUSR1:printf("Ne ocupam de listarea directoarelor si numarului de treasururi in fiecare hunt\n");
+      handler_list_directory();
       break;
     case SIGUSR2:
+      printf("Ne ocupam de listarea treasure_urilor dintr-un hunt\n");
+      handler_list_treasures();
       break;
     case SIGTERM :
+      printf("Ne ocupam de inchiderea monitorului\n");
+      handler_stop_monitor();
       break;
     case SIGINT:
+      printf("Ne ocupam de deschiderea unui HUNT, cu scopul analizei unui treasure\n");
+      handler_view_treasure();
       break;
     case SIGCHLD:
-      break;
+      /* break;
     case SIGHUP:///pt remove
-      
+      */
     }
   
 }
