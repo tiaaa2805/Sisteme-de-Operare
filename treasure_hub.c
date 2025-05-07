@@ -36,7 +36,7 @@ void write_intxt(const char *c)
   size_t len=sizeof(char)*strlen(c);
   if(write(fd,c,len)!=len)
     {
-      perror("eroare ;a citire \n");
+      perror("eroare la citire \n");
       close(fd);
       return ;
     }
