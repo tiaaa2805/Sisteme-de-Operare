@@ -22,7 +22,7 @@ char  *readdetails()
   int fd=open("comenzi.txt",O_RDONLY,S_IRUSR);
   if(fd==-1)
     {
-      perror("Eroare la deschiderea firierului pentru citirea comenzilor\n");
+      perror("Eroare la deschiderea fisierului pentru citirea comenzilor\n");
       return NULL;
     }
   lseek(fd,ls*sizeof(char),SEEK_SET);
@@ -65,9 +65,13 @@ void handler_list_treasures()
 {
   char op[Max];
   snprintf(op,Max,"%s",readdetails());
+  op[strcspn(op,"\n")]='\0';
   int len=strcspn(op," ");
+  printf("%s\n",op+len+1);
   if(monitor_stop==0)
-    list(op+len+1);
+    {
+      list(op+len+1);
+    }
   else
     printf("Eroare, monitor posibil inchis!\n");
 }
@@ -110,7 +114,7 @@ void handler_list_directory()
 	  if(este_director(citim->d_name))
 	    {
 	      snprintf(director,Max,"%s",citim->d_name);
-	      DIR *fdd=opendir(".");
+	      DIR *fdd=opendir(director);
 	      struct dirent *citim2;
 	      if(fdd)
 		{
@@ -118,16 +122,15 @@ void handler_list_directory()
 		    {
 		      if(strcmp(citim2->d_name,".")==0 || strcmp(citim2->d_name,"..")==0)
 			continue;
-		      printf("Numele huntului este %s\n",citim2->d_name);
+		         printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+		      printf("\tNumele huntului este: %s\n",director);
 		      
-			  snprintf(cale,sizeof(cale),"%s/%s",citim2->d_name,"treasure.dat");
+			  snprintf(cale,sizeof(cale),"%s/%s",director,"treasure.dat");
 		           int fisier=open(cale, O_RDONLY,S_IRUSR);
 		           int nr=nrtreasure(fisier);
 		           printf("Numarul treasurilor este %d \n\n", nr);
 		           close(fisier);
 			   break;
-			
-		      
 		    }
 		  
 		}
@@ -135,7 +138,7 @@ void handler_list_directory()
 		printf("Hunt-ul a fost inchis cu succes!!\n");
 	      else
 		perror("Exista o rpoblema la inchiderea Huntului\n");
-		      
+	      printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");	      
 	    }
 	}
     }
