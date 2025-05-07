@@ -5,6 +5,7 @@
 #include<fcntl.h>
 #include<string.h>
 #include<error.h>
+#include<errno.h>
 #include<sys/wait.h>
 #include<unistd.h>
 #define Max 256
@@ -18,7 +19,7 @@ struct stringtoValue words[]={
   {"start_monitor",1},
   {"list_hunts",2},
   {"list_treasures",3},
-  {"view_treasures",4},
+  {"view_treasure",4},
   {"stop_monitor",5},
   {"exit",6}
 };
@@ -27,7 +28,7 @@ volatile sig_atomic_t monitor_execution=0;
 volatile sig_atomic_t monitor_stop=0;
 void write_intxt(const char *c)
 {
-  int fd=open("comenzi.txt", O_WRONLY|O_CREAT|O_TRUNC, 0666);
+  int fd=open("comenzi.txt", O_WRONLY|O_APPEND|O_CREAT|O_TRUNC, 0666);
   if(fd==-1)
     {
       perror("eroare la deschiderea fisierului de scris \n");
@@ -36,7 +37,7 @@ void write_intxt(const char *c)
   size_t len=sizeof(char)*strlen(c);
   if(write(fd,c,len)!=len)
     {
-      perror("eroare la citire \n");
+      perror("eroare la scriere \n");
       close(fd);
       return ;
     }
@@ -62,7 +63,9 @@ void verificare(int sig)
   monitor_execution=-1;
   if(WIFEXITED(status))
     {
-      printf("Monitorul s-a inchis cu urmatorul cod  %d  (0---inseamna succes, altceva----probleme)\n", WEXITSTATUS(status));
+      printf("Monitorul s-a inchis cu urmatorul cod  %d  (0---inseamna succes, altceva----probleme)\n\n", WEXITSTATUS(status));
+      	 printf("--------------------------------------------------\n\n");
+      
     }
   else
     printf("Monitorul nu s-a inchis normal\n");
@@ -71,12 +74,13 @@ void sendcommand(const char *cc)
 {
   if(strcmp(cc, "--list_hunts")==0)
     {
-      write_intxt(cc);
+      /// write_intxt(cc);
       if(kill(monitor_pid, SIGUSR1)==-1)
 	{ perror("Trimiterea semnalului a dat o eroare ");
 	}
       else
-	{ printf("S-a trimis semnalul pentru list_hunt \n"); 
+	{ printf("S-a trimis semnalul pentru list_hunt \n");
+	  fflush(stdout);
 	}
     }
   if(strncmp(cc,"--list_treasures ",17)==0)
@@ -98,12 +102,25 @@ void sendcommand(const char *cc)
 	}
       else
 	{
-	  printf("S-a trimis semnalul pentru view_treasure\n"); 
+	  printf("S-a trimis semnalul pentru view_treasure\n");
+	  
 	}
     }
   if(strcmp(cc, "--stop_monitor")==0)
     {
-     
+
+      if(kill(monitor_pid,0)==-1)
+	{
+	  if(errno==ESRCH)
+	    {
+	      printf("Monitorul nu mai exista\n");
+	      exit(0);
+	    }
+	  else
+	    perror("Eroare la verificarea existentei monitorului\n");
+	}
+      else{
+	
        if(kill(monitor_pid,SIGTERM)==-1)
 	{
 	  perror("Trimiterea semnalului a dat o eroare ");
@@ -112,6 +129,7 @@ void sendcommand(const char *cc)
 	{
 	  printf("S-a trimis semnalul pentru stop_monitor\n"); 
 	}
+      }
     }
   
 }
@@ -124,11 +142,11 @@ int main()
   sigemptyset(&sa.sa_mask);
   sa.sa_flags=SA_RESTART;
   sigaction(SIGCHLD,&sa,NULL);
-  printf("Urmatoarele comenzi disponibile pentru aceasta interfata sunt:\n\t start_monitor---pornirea monitorului,care este obligatorie:\n\t list_hunts---afiseaaza hunturile si numarul loc\n\t list_treasures---afiseaza toate treasure-urile din hunt-ul respectiv\n\t view_treasure---afiseaza detaliile legate de un treasure, dintr-un hunt\n\t stop_monitor---o actiune necesara la fial, de oprire a monitorului\n\t exit---o actiune care verifica daca monitorul inca ruleaza, in caz afirmativ printeaza o eroare, altfel il opreste\n\nIntroduceti comanda dorita\n");
+  printf("Urmatoarele comenzi disponibile pentru aceasta interfata sunt:\n\t start_monitor---pornirea monitorului,care este obligatorie:\n\t list_hunts---afiseaaza hunturile si numarul loc\n\t list_treasures---afiseaza toate treasure-urile din hunt-ul respectiv\n\t view_treasure---afiseaza detaliile legate de un treasure, dintr-un hunt\n\t stop_monitor---o actiune necesara la fial, de oprire a monitorului\n\t exit---o actiune care verifica daca monitorul inca ruleaza, in caz afirmativ printeaza o eroare, altfel il opreste\n\nIntroduceti comanda dorita:\n");
   char buff[Max],buff2[Max], comprim[MAX], buf3[70];
   while(1)
  {
-   printf("Introduceti comenzile corespunzatoare\n\n");
+  
     fgets(buff,Max, stdin);
     buff[strcspn(buff, "\n")]='\0';
     if(command(buff)==1)
@@ -155,6 +173,7 @@ int main()
 		      exit(0);
 		    }
 	   }
+	 printf("\n\n--------------------------------------------------\n\n");
       }
     else
       {
@@ -163,10 +182,12 @@ int main()
         	printf("Porneste monitorul pentru inceput!\n");
         	exit(1);
               }
+	   printf("Introduceti comenzile corespunzatoare:\n\n");
           switch(command(buff))
            {
             case 2:printf("S-a optat pentru listarea hunts\n");
               sendcommand("--list_hunts" );
+	       printf("\n\n--------------------------------------------------\n\n");
               break;
             case 3:printf("S-a optat pentru listarea treasure-urilor\n");
 	      printf("Introduceti numele huntului \n");
@@ -174,6 +195,7 @@ int main()
               buff2[strcspn(buff2,"\n")]='\0';
               snprintf(comprim, MAX,"--list_treasures %s", buff2);
               sendcommand(comprim);
+	       printf("\n\n--------------------------------------------------\n\n");
               break;
             case 4:printf("S-a optat pentru vizualizarea treasure-ului specificat \n");
               printf("Introduceti pentru inceput hunt-ul\n");
@@ -184,25 +206,34 @@ int main()
               buf3[strcspn(buf3,"\n")]='\0';
               snprintf(comprim, MAX,"--view_treasure %s",buf3);
               sendcommand(comprim);
+	       printf("\n\n--------------------------------------------------\n\n");
            break;
            case 5:printf("S-a optat pentru oprirea monitorului \n");
 	     snprintf(comprim,Max,"--stop_monitor");
 	     sendcommand(comprim);
 	     monitor_stop=1;
+	      printf("\n\n--------------------------------------------------\n\n");
            break;
            case 6:printf("S-a optat pentru oprirea fortata a procesului\n");
 	     if(monitor_pid!=0 && monitor_stop!=1)
 	       {
-		 printf("Mai intai trebuie oprirea monitorului !!");
+		 if(monitor_stop!=1)
+		   { printf("Mai intai trebuie oprirea monitorului !!");
+		   }
 		  sendcommand("--stop_monitor");
+		  
 	       }
 	     else
-	      exit(0);
+	       {
+		  printf("\n\n--------------------------------------------------\n\n");
+		 exit(0);
+	       }
 	     break;
 	   default:printf("Comanda necunoscuta \n");
           }
        }
-    }
+   
+       }
   
   return 0;
 }

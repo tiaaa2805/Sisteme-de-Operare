@@ -27,22 +27,21 @@ char  *readdetails()
     }
   lseek(fd,ls*sizeof(char),SEEK_SET);
   char *linie=malloc(Max);
+  char ch;
    int i=0;
-  while(read(fd,linie,1)==1)
+  while(read(fd,&ch,1)==1)
     {
-      if(linie[i]=='\n')
-	{
-	  linie[i+1]='\0';
-	  break;
-	}
-      i++;
-      if(i>255)
+      if(ch=='\n' || i>255)
 	{
 	  linie[i]='\0';
 	  break;
 	}
+      linie[i++]=ch;
     }
   ls++;
+  size_t len=strlen(linie);
+  if(linie[len-1]=='\n')
+    linie[len-1]='\0';
   printf("Comanda preluata din text este %s\n",linie);
   printf("\nNe ocupam de transmiterea detaliilor\n");
   close(fd);
@@ -50,12 +49,17 @@ char  *readdetails()
 }
 void handler_view_treasure()
 {
-  char op[Max], hunt[Max], tres[Max];
-  strcpy( op,readdetails());
-  int len=strcspn(op," ");
-  int len2=strcspn(op+len+1," ");
-  strncpy(hunt,op+len+1,strlen(op)-len2);
-  strcpy(tres,op+len2+1);
+  char op[Max];
+  char *hunt, *tres;
+   snprintf(op,Max,"%s",readdetails());
+   char *len=strchr(op,' ');
+   len++;
+   char *len2=strchr(len,' ');
+   size_t p=len2-len;
+  hunt=strndup(len,p);
+   len2++;
+   tres=len2;
+  printf("%s %s\n",hunt,tres);
   if(monitor_stop==0)
     view(hunt,tres);
   else
@@ -108,9 +112,8 @@ void handler_list_directory()
     {
       while((citim=readdir(fd))!=NULL)
 	{
-	  if(strcmp(citim->d_name,".")==0 || strcmp(citim->d_name,"..")==0)
+	  if(strcmp(citim->d_name,".")==0 || strcmp(citim->d_name,"..")==0 || strcmp(citim->d_name,".git")==0)
 	    continue;
-	  
 	  if(este_director(citim->d_name))
 	    {
 	      snprintf(director,Max,"%s",citim->d_name);
@@ -120,15 +123,15 @@ void handler_list_directory()
 		{
 		  while((citim2=readdir(fdd))!=NULL)
 		    {
-		      if(strcmp(citim2->d_name,".")==0 || strcmp(citim2->d_name,"..")==0)
+		      if(strcmp(citim2->d_name,".")==0 || strcmp(citim2->d_name,"..")==0 )
 			continue;
-		         printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+		         printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 		      printf("\tNumele huntului este: %s\n",director);
 		      
 			  snprintf(cale,sizeof(cale),"%s/%s",director,"treasure.dat");
 		           int fisier=open(cale, O_RDONLY,S_IRUSR);
 		           int nr=nrtreasure(fisier);
-		           printf("Numarul treasurilor este %d \n\n", nr);
+		           printf("\tNumarul treasurilor este %d \n\n", nr);
 		           close(fisier);
 			   break;
 		    }
@@ -137,8 +140,8 @@ void handler_list_directory()
 	      if(closedir(fdd)==0)
 		printf("Hunt-ul a fost inchis cu succes!!\n");
 	      else
-		perror("Exista o rpoblema la inchiderea Huntului\n");
-	      printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");	      
+		perror("Exista o problema la inchiderea Huntului\n");
+	      printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");	      
 	    }
 	}
     }
@@ -155,22 +158,27 @@ void setup_for_handler(int sig)
     {
     case SIGUSR1:printf("Ne ocupam de listarea directoarelor si numarului de treasururi in fiecare hunt\n");
       handler_list_directory();
-        printf("\n\n--------------------------------------------------\n\n");
+        printf("\n--------------------------------------------------\n\n");
       break;
     case SIGUSR2:
       printf("Ne ocupam de listarea treasure_urilor dintr-un hunt\n");
       handler_list_treasures();
-       printf("\n\n--------------------------------------------------\n\n");
+       printf("\n--------------------------------------------------\n\n");
       break;
     case SIGTERM :
       printf("Ne ocupam de inchiderea monitorului\n");
-      handler_stop_monitor();
-       printf("\n\n--------------------------------------------------\n\n");
+      if(monitor_stop==0)
+         handler_stop_monitor();
+      else
+	{printf("Minitorul a fost deja inchis!\n");
+	  exit(0);
+	}
+       printf("\n--------------------------------------------------\n\n");
       break;
     case SIGINT:
       printf("Ne ocupam de deschiderea unui HUNT, cu scopul analizei unui treasure\n");
       handler_view_treasure();
-       printf("\n\n--------------------------------------------------\n\n");
+       printf("\n--------------------------------------------------\n\n");
       /*break;
     case SIGHUP:///pt remove
       */
