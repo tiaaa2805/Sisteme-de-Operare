@@ -28,7 +28,7 @@ volatile sig_atomic_t monitor_execution=0;
 volatile sig_atomic_t monitor_stop=0;
 void write_intxt(const char *c)
 {
-  int fd=open("comenzi.txt", O_WRONLY|O_APPEND|O_CREAT|O_TRUNC, 0666);
+  int fd=open("comenzi.txt", O_WRONLY|O_APPEND|O_CREAT, 0666);
   if(fd==-1)
     {
       perror("eroare la deschiderea fisierului de scris \n");
@@ -72,6 +72,7 @@ void verificare(int sig)
 }
 void sendcommand(const char *cc)
 {
+ 
   if(strcmp(cc, "--list_hunts")==0)
     {
       /// write_intxt(cc);
@@ -193,7 +194,7 @@ int main()
 	      printf("Introduceti numele huntului \n");
               fgets(buff2,Max,stdin);
               buff2[strcspn(buff2,"\n")]='\0';
-              snprintf(comprim, MAX,"--list_treasures %s", buff2);
+              snprintf(comprim, MAX,"--list_treasures %s\n", buff2);
               sendcommand(comprim);
 	       printf("\n\n--------------------------------------------------\n\n");
               break;
@@ -204,7 +205,7 @@ int main()
               printf("Introduceti acum treasure-ul cautat \n");
               fgets(buf3,70,stdin);
               buf3[strcspn(buf3,"\n")]='\0';
-              snprintf(comprim, MAX,"--view_treasure %s",buf3);
+              snprintf(comprim, MAX,"--view_treasure %s %s\n",buff2,buf3);
               sendcommand(comprim);
 	       printf("\n\n--------------------------------------------------\n\n");
            break;

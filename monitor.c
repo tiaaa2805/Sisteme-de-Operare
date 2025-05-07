@@ -14,23 +14,36 @@
 #include<stdbool.h>
 #include"treasur.h"
 #define Max 500
-int ls=0;
+
 volatile sig_atomic_t monitor_execution=0;
 volatile sig_atomic_t monitor_stop=0;
 char  *readdetails()
 {
+  static off_t ls=0;
   int fd=open("comenzi.txt",O_RDONLY,S_IRUSR);
   if(fd==-1)
     {
       perror("Eroare la deschiderea fisierului pentru citirea comenzilor\n");
       return NULL;
     }
-  lseek(fd,ls*sizeof(char),SEEK_SET);
+  if(lseek(fd,ls,SEEK_SET)==-1)
+    {
+      perror("Eroare la lseek");
+      close(fd);
+      return NULL;
+    }
   char *linie=malloc(Max);
+  if(!linie)
+    {
+      perror("eroare la alocare ");
+      close(fd);
+      return NULL;
+    }
   char ch;
    int i=0;
   while(read(fd,&ch,1)==1)
     {
+      ls++;
       if(ch=='\n' || i>255)
 	{
 	  linie[i]='\0';
@@ -38,12 +51,9 @@ char  *readdetails()
 	}
       linie[i++]=ch;
     }
-  ls++;
-  size_t len=strlen(linie);
-  if(linie[len-1]=='\n')
-    linie[len-1]='\0';
+    linie[i]='\0';
   printf("Comanda preluata din text este %s\n",linie);
-  printf("\nNe ocupam de transmiterea detaliilor\n");
+  printf("\tNe ocupam de transmiterea detaliilor\n");
   close(fd);
   return linie;
 }
@@ -53,10 +63,20 @@ void handler_view_treasure()
   char *hunt, *tres;
    snprintf(op,Max,"%s",readdetails());
    char *len=strchr(op,' ');
+   if(len==NULL)
+     {
+       printf("Comanda invalida ca nu am gasit spatiu 1\n");
+       return;
+     }
    len++;
    char *len2=strchr(len,' ');
-   size_t p=len2-len;
-  hunt=strndup(len,p);
+    if(len2==NULL)
+     {
+       printf("Comanda invalida ca nu am gasit spatiu 2\n");
+       return;
+     }
+    *len2='\0';
+    hunt=len;
    len2++;
    tres=len2;
   printf("%s %s\n",hunt,tres);
