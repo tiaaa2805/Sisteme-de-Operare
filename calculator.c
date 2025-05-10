@@ -53,13 +53,14 @@ int getvalue(char *hunt, char *tres)
 }
 void check( int fd, results *implementare)
 {
-  results o;
+  results o;int ok=0;
   while((read(fd,&o,sizeof(results)))==sizeof(results))
     {
       if(strcmp(o.user,implementare->user)==0)
 	{
 	  implementare->points+=o.points;
 	  lseek(fd,-sizeof(results),SEEK_CUR);
+	  ok=1;
 	  if(write(fd,implementare,sizeof(results))!=sizeof(results))
 	    {
 	      perror("eroare la scrierea in fisier\n");
@@ -68,7 +69,15 @@ void check( int fd, results *implementare)
 	    }
 	  break;
 	}
-      
+    }
+  if(ok==0)
+    {
+       if(write(fd,implementare,sizeof(results))!=sizeof(results))
+	    {
+	      perror("eroare la scrierea in fisier\n");
+	      close(fd);
+	      exit(1);
+	    }
     }
   
 }
@@ -92,11 +101,11 @@ int main(int argc, char *argv[])
   int val=getvalue(hunt,tres);
   printf("%d",val);
   char *utilizator=userr();
-  results *implementare;
-  snprintf(implementare->user,Max,"%s",utilizator);
-  implementare->points=val;
+  results implementare;
+  snprintf(implementare.user,Max,"%s",utilizator);
+  implementare.points=val;
   lseek(fd,0,SEEK_SET);
-  check(fd,implementare);
+  check(fd,&implementare);
  
   /// printf("Scriu:%s \n",implementare);
   close(fd);
