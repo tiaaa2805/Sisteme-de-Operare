@@ -64,18 +64,18 @@ void check( int fd, results *implementare)
 	  if(write(fd,implementare,sizeof(results))!=sizeof(results))
 	    {
 	      perror("eroare la scrierea in fisier\n");
-	      close(fd);
+	      
 	      exit(1);
 	    }
 	  break;
 	}
     }
   if(ok==0)
-    {
+    {printf("suntem aici ");
        if(write(fd,implementare,sizeof(results))!=sizeof(results))
 	    {
 	      perror("eroare la scrierea in fisier\n");
-	      close(fd);
+	      
 	      exit(1);
 	    }
     }
@@ -92,21 +92,26 @@ int main(int argc, char *argv[])
   char *hunt=argv[1];
   char *tres=argv[2];
 
-  int fd=open("results.txt", O_APPEND|O_CREAT|O_WRONLY, 0644);
+  int fd=open("results.txt", O_RDWR|O_CREAT, 0644);
   if(fd==-1)
     {
       perror("Eroare la deschiderea fisierului pentru scrierea comenzilor\n");
       exit(-1);
     }
   int val=getvalue(hunt,tres);
-  printf("%d",val);
+  printf("%d\n",val);
   char *utilizator=userr();
   results implementare;
   snprintf(implementare.user,Max,"%s",utilizator);
   implementare.points=val;
   lseek(fd,0,SEEK_SET);
   check(fd,&implementare);
- 
+  results o;
+    lseek(fd,0,SEEK_SET);
+   while((read(fd,&o,sizeof(results)))==sizeof(results))
+    {
+      printf("Utilizatorul este : %s, iar numarul sau de puncte este %d\n",o.user,o.points);
+    }
   /// printf("Scriu:%s \n",implementare);
   close(fd);
   return 0;
