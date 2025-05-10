@@ -25,12 +25,9 @@ int getvalue(char *hunt, char *tres)
       perror("Eroare la deschiderea huntului pentru cautarea valorii\n");
       exit(-1);
     }
-  while((oo=readdir(huntdir)))
-    {
-      if(strcmp(oo->d_name,".")==0 || strcmp(oo->d_name,"..")==0)
-	continue;
+ 
       snprintf(cale,Max, "%s/%s",hunt,"treasure.dat");
-      int fdfisier=open(cale, O_RDONLY,0666);
+      int fdfisier=open(cale, O_RDONLY,S_IRUSR);
       treasure tr;
       if(fdfisier==-1)
 	{
@@ -49,7 +46,7 @@ int getvalue(char *hunt, char *tres)
       close(fdfisier);
       return valoare;
       
-    }
+    
   closedir(huntdir);
   return 0;
 }
@@ -63,21 +60,24 @@ int main(int argc, char *argv[])
   char *hunt=argv[1];
   char *tres=argv[2];
  
-  int fd=open("results.txt", O_APPEND|O_CREAT|O_WRONLY, S_IWUSR);
+  int fd=open("results.txt", O_APPEND|O_CREAT|O_WRONLY, 0644);
   if(fd==-1)
     {
       perror("Eroare la deschiderea fisierului pentru scrierea comenzilor\n");
       exit(-1);
     }
   int val=getvalue(hunt,tres);
+  printf("%d",val);
   char *utilizator=userr(), implementare[Max];
+ 
   snprintf(implementare,Max,"%s %d\n",utilizator,val);
-  if(write(fd,implementare,sizeof(implementare))!=sizeof(implementare))
+  if(write(fd,implementare,strlen(implementare))!=strlen(implementare))
     {
       perror("eroare la scrierea in fisier\n");
       close(fd);
       exit(1);
     }
+   printf("Scriu:%s \n",implementare);
   close(fd);
   return 0;
 }
