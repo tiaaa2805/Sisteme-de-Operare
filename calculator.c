@@ -13,13 +13,16 @@
 #include<sys/wait.h>
 #include<stdbool.h>
 #include"treasur.h"
-#define Max 500
+#define Max 256
+typedef struct{
+  char user[Max];
+  int points;
+}results;
 int getvalue(char *hunt, char *tres)
 {
-  int valoare;
+  int valoare=0;
    char cale[Max];
   DIR *huntdir=opendir(hunt);
-  struct dirent *oo;
   if(huntdir==NULL)
     {
       perror("Eroare la deschiderea huntului pentru cautarea valorii\n");
@@ -27,6 +30,7 @@ int getvalue(char *hunt, char *tres)
     }
  
       snprintf(cale,Max, "%s/%s",hunt,"treasure.dat");
+    
       int fdfisier=open(cale, O_RDONLY,S_IRUSR);
       treasure tr;
       if(fdfisier==-1)
@@ -44,22 +48,41 @@ int getvalue(char *hunt, char *tres)
 	    }
 	}
       close(fdfisier);
-      return valoare;
-      
-    
   closedir(huntdir);
-  return 0;
+  return valoare;
 }
+void check( int fd, results *implementare)
+{
+  results o;
+  while((read(fd,&o,sizeof(results)))==sizeof(results))
+    {
+      if(strcmp(o.user,implementare->user)==0)
+	{
+	  implementare->points+=o.points;
+	  lseek(fd,-sizeof(results),SEEK_CUR);
+	  if(write(fd,implementare,sizeof(results))!=sizeof(results))
+	    {
+	      perror("eroare la scrierea in fisier\n");
+	      close(fd);
+	      exit(1);
+	    }
+	  break;
+	}
+      
+    }
+  
+}
+ 
 int main(int argc, char *argv[])
 {
   if(argc<3)
     {
-      printf("Intrebuiau introduse numele hunt-ului, numele utilizatorului si numele treasure-lui\n");
+      printf("Trebuiau introduse numele hunt-ului, numele utilizatorului si numele treasure-lui\n");
       exit(-1);
     }
   char *hunt=argv[1];
   char *tres=argv[2];
- 
+
   int fd=open("results.txt", O_APPEND|O_CREAT|O_WRONLY, 0644);
   if(fd==-1)
     {
@@ -68,16 +91,14 @@ int main(int argc, char *argv[])
     }
   int val=getvalue(hunt,tres);
   printf("%d",val);
-  char *utilizator=userr(), implementare[Max];
+  char *utilizator=userr();
+  results *implementare;
+  snprintf(implementare->user,Max,"%s",utilizator);
+  implementare->points=val;
+  lseek(fd,0,SEEK_SET);
+  check(fd,implementare);
  
-  snprintf(implementare,Max,"%s %d\n",utilizator,val);
-  if(write(fd,implementare,strlen(implementare))!=strlen(implementare))
-    {
-      perror("eroare la scrierea in fisier\n");
-      close(fd);
-      exit(1);
-    }
-   printf("Scriu:%s \n",implementare);
+  /// printf("Scriu:%s \n",implementare);
   close(fd);
   return 0;
 }
