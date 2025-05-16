@@ -13,8 +13,8 @@
 #include<sys/wait.h>
 #include<stdbool.h>
 #include"treasur.h"
-#define Max2 200
-
+#define Max2 260
+#define Max22 300
 struct stringtoValue{
   const char *key;
   int op;
@@ -58,7 +58,6 @@ int command(const char *buff)
 }
 void handler_view_treasure()
 {
-  
   char buff2[50],buf3[50],comprim[Max2];
     printf("Introduceti pentru inceput hunt-ul\n");
     fgets(buff2,50,stdin);
@@ -92,7 +91,6 @@ void handler_list_treasures()
 
 void handler_stop_monitor()
 {printf("Monitorul se va inchide in 5 secunde\n");
-  
     usleep(5000000);
     printf("Monitorul se afla in procesul de inchidere\n");
     monitor_stop=-1;
@@ -115,18 +113,18 @@ int este_director(const char *oo)
 }
 void handler_list_directory()
 {
-  char cale[POSIX1_], director[Max2];
+  char cale[Max22], director[Max2];
   DIR *fd=opendir(".");
   write_intxt("list_hunts");
   struct dirent *citim;
   if(fd)
     {
-      while((citim=readdir(fd))!=NULL)
+      while((citim=readdir(fd))!=NULL){
        	  if(strcmp(citim->d_name,".")==0 || strcmp(citim->d_name,"..")==0 || strcmp(citim->d_name,".git")==0)
 	    continue;
 	  if(este_director(citim->d_name))
 	    {
-	      snprintf(director,Max,"%s",citim->d_name);
+	      snprintf(director,Max2,"%s",citim->d_name);
 	      DIR *fdd=opendir(director);
 	      struct dirent *citim2;
 	      if(fdd)
@@ -153,14 +151,13 @@ void handler_list_directory()
 		perror("Exista o problema la inchiderea Huntului\n");
 	      printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");	      
 	    }
-	}
+      }
+    
     }
   if(closedir(fd)==0)
     printf("Directorul a fost inchis cu succes \n");
   else
     perror("INCHIDEREA NU A FUNCTIONAT\n");
-
-  
 }
 void setup_for_sigaction(int sig)
 {
@@ -273,7 +270,6 @@ int main()
 		   { printf("Mai intai trebuie oprirea monitorului !!");
 		   }
 		 kill(monitor_pid,SIGTERM);
-		  
 	       }
 	     else
 	       {
