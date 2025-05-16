@@ -98,7 +98,7 @@ void handler_stop_monitor()
     usleep(5000000);
     printf("Monitorul se afla in procesul de inchidere\n");
     monitor_stop=1;
-    exit(0);
+   
 }
 
 int este_director(const char *oo)
@@ -213,7 +213,7 @@ int main()
 		      setup(SIGTERM);
 		      setup(SIGINT);
 		      printf("Monitorul este pornit cu pidul urmator %d \n",getpid());
-		      while(monitor_pid!=0)
+		      while(monitor_pid==0)
 			{
 			  pause();
 			  if(usr1)
@@ -228,7 +228,7 @@ int main()
 			  if(term)
 			    {
 			      handler_stop_monitor(); 
-			      exit(0);
+			      break;
 			    }
 			  if(ing)
 			    {
