@@ -1,15 +1,20 @@
-#include<stdio.h>
 #include<stdint.h>
+#include<stdio.h>
 #include<stdlib.h>
-#include<signal.h>
-#include<fcntl.h>
-#include<string.h>
-#include<error.h>
-#include<errno.h>
-#include<sys/wait.h>
 #include<unistd.h>
-#define Max 256
-#define MAX 356
+#include <fcntl.h>
+#include <sys/stat.h>
+#include<string.h>
+#include <errno.h>
+#include<time.h>
+#include<dirent.h>
+#include<signal.h>
+#include<limits.h>
+#include<sys/wait.h>
+#include<stdbool.h>
+#include"treasur.h"
+#define Max 500
+
 struct stringtoValue{
   const char *key;
   int op;
@@ -51,190 +56,157 @@ int command(const char *buff)
       return words[i].op;
   return 0;
 }
-void verificare(int sig)
-{int status;
-  pid_t oo=waitpid(monitor_pid,&status,0);
-  if(oo==-1)
+void handler_view_treasure()
+{
+  char op[Max];
+  char *hunt, *tres;
+   snprintf(op,Max,"%s",readdetails());
+   char *len=strchr(op,' ');
+   if(len==NULL)
+     {
+       printf("Comanda invalida ca nu am gasit spatiu 1\n");
+       return;
+     }
+   len++;
+   char *len2=strchr(len,' ');
+    if(len2==NULL)
+     {
+       printf("Comanda invalida ca nu am gasit spatiu 2\n");
+       return;
+     }
+    *len2='\0';
+    hunt=len;
+   len2++;
+   tres=len2;
+  printf("%s %s\n",hunt,tres);
+  if(monitor_stop==0)
+    view(hunt,tres);
+  else
+    printf("Eroare, monitor posibil inchis!\n");
+}
+void handler_list_treasures()
+{
+  char op[Max];
+  snprintf(op,Max,"%s",readdetails());
+  op[strcspn(op,"\n")]='\0';
+  int len=strcspn(op," ");
+  printf("%s\n",op+len+1);
+  if(monitor_stop==0)
     {
-      perror("Eroare la waitpid : ");
-      return;
-    }
-  
-  monitor_execution=-1;
-  if(WIFEXITED(status))
-    {
-      printf("Monitorul s-a inchis cu urmatorul cod  %d  (0---inseamna succes, altceva----probleme)\n\n", WEXITSTATUS(status));
-      	 printf("--------------------------------------------------\n\n");
-      
+      list(op+len+1);
     }
   else
-    printf("Monitorul nu s-a inchis normal\n");
+    printf("Eroare, monitor posibil inchis!\n");
 }
-void sendcommand(const char *cc)
-{
- 
-  if(strcmp(cc, "--list_hunts")==0)
-    {
-      /// write_intxt(cc);
-      if(kill(monitor_pid, SIGUSR1)==-1)
-	{ perror("Trimiterea semnalului a dat o eroare ");
-	}
-      else
-	{ printf("S-a trimis semnalul pentru list_hunt \n");
-	  fflush(stdout);
-	}
-    }
-  if(strncmp(cc,"--list_treasures ",17)==0)
-    {
-      write_intxt(cc);
-      if(kill(monitor_pid,SIGUSR2)==-1)
-	{ perror("Trimiterea semnalului a dat o eroare ");
-	}
-      else
-	{ printf("S-a trimis semnalul pentru list_treasures\n"); 
-	}
-    }
-  if(strncmp(cc,"--view_treasure ",16)==0)
-    {
-      write_intxt(cc);
-      if(kill(monitor_pid,SIGINT)==-1)
-	{
-	  perror("Trimiterea semnalului a dat o eroare ");
-	}
-      else
-	{
-	  printf("S-a trimis semnalul pentru view_treasure\n");
-	  
-	}
-    }
-  if(strcmp(cc, "--stop_monitor")==0)
-    {
 
-      if(kill(monitor_pid,0)==-1)
-	{
-	  if(errno==ESRCH)
+void handler_stop_monitor()
+{printf("Monitorul se va inchide in 5 secunde\n");
+  
+    usleep(5000000);
+    printf("Monitorul se afla in procesul de inchidere\n");
+    monitor_stop=-1;
+    exit(0);
+}
+void handler_sigc()
+{
+  int status;
+  pid_t v=waitpid(getpid(),&status,0);
+  if(v==-1)
+    {
+      printf("Eroare la waitpid\n");
+    }
+  printf("Monitorul are acest status %d\n", WEXITSTATUS(status));
+}
+int este_director(const char *oo)
+{
+  struct stat st;
+  return ((stat(oo,&st)==0) && S_ISDIR(st.st_mode));
+}
+void handler_list_directory()
+{
+  char cale[PATH_MAX], director[Max];
+  DIR *fd=opendir(".");
+  struct dirent *citim;
+  if(fd)
+    {
+      while((citim=readdir(fd))!=NULL)
+       	  if(strcmp(citim->d_name,".")==0 || strcmp(citim->d_name,"..")==0 || strcmp(citim->d_name,".git")==0)
+	    continue;
+	  if(este_director(citim->d_name))
 	    {
-	      printf("Monitorul nu mai exista\n");
-	      exit(0);
+	      snprintf(director,Max,"%s",citim->d_name);
+	      DIR *fdd=opendir(director);
+	      struct dirent *citim2;
+	      if(fdd)
+		{
+		  while((citim2=readdir(fdd))!=NULL)
+		    {
+		      if(strcmp(citim2->d_name,".")==0 || strcmp(citim2->d_name,"..")==0 )
+			continue;
+		         printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+		      printf("\tNumele huntului este: %s\n",director);
+		      
+			  snprintf(cale,sizeof(cale),"%s/%s",director,"treasure.dat");
+		           int fisier=open(cale, O_RDONLY,S_IRUSR);
+		           int nr=nrtreasure(fisier);
+		           printf("\tNumarul treasurilor este %d \n\n", nr);
+		           close(fisier);
+			   break;
+		    }
+		  
+		}
+	      if(closedir(fdd)==0)
+		printf("Hunt-ul a fost inchis cu succes!!\n");
+	      else
+		perror("Exista o problema la inchiderea Huntului\n");
+	      printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");	      
 	    }
-	  else
-	    perror("Eroare la verificarea existentei monitorului\n");
 	}
-      else{
-	
-       if(kill(monitor_pid,SIGTERM)==-1)
-	{
-	  perror("Trimiterea semnalului a dat o eroare ");
-	}
+    }
+  if(closedir(fd)==0)
+    printf("Directorul a fost inchis cu succes \n");
+  else
+    perror("INCHIDEREA NU A FUNCTIONAT\n");
+
+  
+}
+void setup_for_handler(int sig)
+{
+  switch(sig)
+    {
+    case SIGUSR1:printf("Ne ocupam de listarea directoarelor si numarului de treasururi in fiecare hunt\n");
+      handler_list_directory();
+        printf("\n--------------------------------------------------\n\n");
+      break;
+    case SIGUSR2:
+      printf("Ne ocupam de listarea treasure_urilor dintr-un hunt\n");
+      handler_list_treasures();
+       printf("\n--------------------------------------------------\n\n");
+      break;
+    case SIGTERM :
+      printf("Ne ocupam de inchiderea monitorului\n");
+      if(monitor_stop==0)
+         handler_stop_monitor();
       else
-	{
-	  printf("S-a trimis semnalul pentru stop_monitor\n"); 
+	{printf("Minitorul a fost deja inchis!\n");
+	  exit(0);
 	}
-      }
+       printf("\n--------------------------------------------------\n\n");
+      break;
+    case SIGINT:
+      printf("Ne ocupam de deschiderea unui HUNT, cu scopul analizei unui treasure\n");
+      handler_view_treasure();
+       printf("\n--------------------------------------------------\n\n");
+   
     }
   
 }
-
 int main()
-{
-  
-  struct sigaction sa;
-  sa.sa_handler=verificare;
+{ struct sigaction sa;
+  sa.sa_handler=setup_for_handler;
   sigemptyset(&sa.sa_mask);
-  sa.sa_flags=SA_RESTART;
-  sigaction(SIGCHLD,&sa,NULL);
-  printf("Urmatoarele comenzi disponibile pentru aceasta interfata sunt:\n\t start_monitor---pornirea monitorului,care este obligatorie:\n\t list_hunts---afiseaaza hunturile si numarul loc\n\t list_treasures---afiseaza toate treasure-urile din hunt-ul respectiv\n\t view_treasure---afiseaza detaliile legate de un treasure, dintr-un hunt\n\t stop_monitor---o actiune necesara la fial, de oprire a monitorului\n\t exit---o actiune care verifica daca monitorul inca ruleaza, in caz afirmativ printeaza o eroare, altfel il opreste\n\nIntroduceti comanda dorita:\n");
-  char buff[Max],buff2[Max], comprim[MAX], buf3[70];
-  while(1)
- {
-  
-    fgets(buff,Max, stdin);
-    buff[strcspn(buff, "\n")]='\0';
-    if(command(buff)==1)
-      {printf("Se verificam daca monitorul este pornit pentru inceput\n");
-
-	if(monitor_execution==1 &&  monitor_pid>0 )
-        	{
-		  printf("Monitorul functioneaza cu acest pid %d\n",monitor_pid);		  
-		}
-	 else
-	   {
-	            printf("Monitorul era/este pornit!\n");
-		  monitor_pid=fork();
-		  if(monitor_pid<0)
-		    {
-		      perror("Eroare la fork : ");
-		      exit(-1); 
-		    }
-		  monitor_execution=1;
-		  if(monitor_pid==0)
-		    {
-		      execl("./monitor", "./monitor",NULL);
-		      /// perror("eroare pentru execl\n");
-		      exit(0);
-		    }
-	   }
-	 printf("\n\n--------------------------------------------------\n\n");
-      }
-    else
-      {
-          if(monitor_pid==-1)
-              {
-        	printf("Porneste monitorul pentru inceput!\n");
-        	exit(1);
-              }
-	   printf("Introduceti comenzile corespunzatoare:\n\n");
-          switch(command(buff))
-           {
-            case 2:printf("S-a optat pentru listarea hunts\n");
-              sendcommand("--list_hunts" );
-	       printf("\n\n--------------------------------------------------\n\n");
-              break;
-            case 3:printf("S-a optat pentru listarea treasure-urilor\n");
-	      printf("Introduceti numele huntului \n");
-              fgets(buff2,Max,stdin);
-              buff2[strcspn(buff2,"\n")]='\0';
-              snprintf(comprim, MAX,"--list_treasures %s\n", buff2);
-              sendcommand(comprim);
-	       printf("\n\n--------------------------------------------------\n\n");
-              break;
-            case 4:printf("S-a optat pentru vizualizarea treasure-ului specificat \n");
-              printf("Introduceti pentru inceput hunt-ul\n");
-              fgets(buff2,Max,stdin);
-              buff2[strcspn(buff2,"\n")]='\0';
-              printf("Introduceti acum treasure-ul cautat \n");
-              fgets(buf3,70,stdin);
-              buf3[strcspn(buf3,"\n")]='\0';
-              snprintf(comprim, MAX,"--view_treasure %s %s\n",buff2,buf3);
-              sendcommand(comprim);
-	       printf("\n\n--------------------------------------------------\n\n");
-           break;
-           case 5:printf("S-a optat pentru oprirea monitorului \n");
-	     snprintf(comprim,Max,"--stop_monitor");
-	     sendcommand(comprim);
-	     monitor_stop=1;
-	      printf("\n\n--------------------------------------------------\n\n");
-           break;
-           case 6:printf("S-a optat pentru oprirea fortata a procesului\n");
-	     if(monitor_pid!=0 && monitor_stop!=1)
-	       {
-		 if(monitor_stop!=1)
-		   { printf("Mai intai trebuie oprirea monitorului !!");
-		   }
-		  sendcommand("--stop_monitor");
-		  
-	       }
-	     else
-	       {
-		  printf("\n\n--------------------------------------------------\n\n");
-		 exit(0);
-	       }
-	     break;
-	   default:printf("Comanda necunoscuta \n");
-          }
-       }
-   
-       }
-  
+  sa.sa_flags=0;
+  sigaction(SIGCHLD,sa,NULL);
+ 
   return 0;
 }
