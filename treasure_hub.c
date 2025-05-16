@@ -19,18 +19,22 @@ struct stringtoValue{
   const char *key;
   int op;
 };
-
 struct stringtoValue words[]={
   {"start_monitor",1},
   {"list_hunts",2},
   {"list_treasures",3},
-  {"view_treasure",4},
+  {"view_treasures",4},
   {"stop_monitor",5},
   {"exit",6}
 };
 pid_t monitor_pid=-1;
 volatile sig_atomic_t monitor_execution=0;
 volatile sig_atomic_t monitor_stop=0;
+
+volatile sig_atomic_t usr1=0;
+volatile sig_atomic_t usr2=0;
+volatile sig_atomic_t term=0;
+volatile sig_atomic_t ing=0;
 void write_intxt(const char *c)
 {
   int fd=open("comenzi.txt", O_WRONLY|O_APPEND|O_CREAT, 0666);
@@ -93,19 +97,10 @@ void handler_stop_monitor()
 {printf("Monitorul se va inchide in 5 secunde\n");
     usleep(5000000);
     printf("Monitorul se afla in procesul de inchidere\n");
-    monitor_stop=-1;
+    monitor_stop=1;
     exit(0);
 }
-void handler_sigc()
-{
-  int status;
-  pid_t v=waitpid(getpid(),&status,0);
-  if(v==-1)
-    {
-      printf("Eroare la waitpid\n");
-    }
-  printf("Monitorul are acest status %d\n", WEXITSTATUS(status));
-}
+
 int este_director(const char *oo)
 {
   struct stat st;
@@ -143,7 +138,6 @@ void handler_list_directory()
 		           close(fisier);
 			   break;
 		    }
-		  
 		}
 	      if(closedir(fdd)==0)
 		printf("Hunt-ul a fost inchis cu succes!!\n");
@@ -152,7 +146,6 @@ void handler_list_directory()
 	      printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");	      
 	    }
       }
-    
     }
   if(closedir(fd)==0)
     printf("Directorul a fost inchis cu succes \n");
@@ -164,29 +157,19 @@ void setup_for_sigaction(int sig)
   switch(sig)
     {
     case SIGUSR1:printf("Ne ocupam de listarea directoarelor si numarului de treasururi in fiecare hunt\n");
-      handler_list_directory();
-        printf("\n--------------------------------------------------\n\n");
+      usr1=1;
       break;
     case SIGUSR2:
       printf("Ne ocupam de listarea treasure_urilor dintr-un hunt\n");
-      handler_list_treasures();
-       printf("\n--------------------------------------------------\n\n");
+      usr2=1;
       break;
     case SIGTERM :
       printf("Ne ocupam de inchiderea monitorului\n");
-      if(monitor_stop==0)
-         handler_stop_monitor();
-      else
-	{printf("Minitorul a fost deja inchis!\n");
-	  exit(0);
-	}
-       printf("\n--------------------------------------------------\n\n");
+      term=1;
       break;
     case SIGINT:
       printf("Ne ocupam de deschiderea unui HUNT, cu scopul analizei unui treasure\n");
-      handler_view_treasure();
-       printf("\n--------------------------------------------------\n\n");
-   
+      ing=1;
     }
   
 }
@@ -229,7 +212,31 @@ int main()
 		      setup(SIGUSR2);
 		      setup(SIGTERM);
 		      setup(SIGINT);
-		      printf("Monitorul este pornit cu pidul urmator %d ",getpid());
+		      printf("Monitorul este pornit cu pidul urmator %d \n",getpid());
+		      while(monitor_pid!=0)
+			{
+			  pause();
+			  if(usr1)
+			    {
+			        handler_list_directory();
+				usr1=0;
+			    }
+			  if(usr2)
+			    { handler_list_treasures();
+			      usr2=0;
+			    }
+			  if(term)
+			    {
+			      handler_stop_monitor(); 
+			      exit(0);
+			    }
+			  if(ing)
+			    {
+			      handler_view_treasure();
+			      ing=0;
+			    }
+			}
+		      exit(0);
 		    }
 	   }
 	 printf("\n\n--------------------------------------------------\n\n");
@@ -258,8 +265,10 @@ int main()
            break;
            case 5:printf("S-a optat pentru oprirea monitorului \n");
 	     write_intxt("stop_monitor");
-	     monitor_stop=1;
 	     kill(monitor_pid,SIGTERM);
+	     waitpid(monitor_pid,NULL,0);
+	     monitor_pid=-1;
+	     monitor_execution=0;
 	      printf("\n\n--------------------------------------------------\n\n");
            break;
            case 6:printf("S-a optat pentru oprirea fortata a procesului\n");
