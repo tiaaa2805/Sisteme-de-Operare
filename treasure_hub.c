@@ -207,6 +207,97 @@ int main()
   sigemptyset(&sa.sa_mask);
   sa.sa_flags=0;
   sigaction(SIGCHLD,sa,NULL);
- 
+  printf("Urmatoarele comenzi disponibile pentru aceasta interfata sunt:\n\t start_monitor---pornirea monitorului,care este obligatorie:\n\t list_hunts---afiseaaza hunturile si numarul loc\n\t list_treasures---afiseaza toate treasure-urile din hunt-ul respectiv\n\t view_treasure---afiseaza detaliile legate de un treasure, dintr-un hunt\n\t stop_monitor---o actiune necesara la fial, de oprire a monitorului\n\t exit---o actiune care verifica daca monitorul inca ruleaza, in caz afirmativ printeaza o eroare, altfel il opreste\n\nIntroduceti comanda dorita:\n");
+  char buff[Max],buff2[Max], comprim[MAX], buf3[70];
+  while(1)
+ {
+  
+    fgets(buff,Max, stdin);
+    buff[strcspn(buff, "\n")]='\0';
+    if(command(buff)==1)
+      {printf("Se verificam daca monitorul este pornit pentru inceput\n");
+
+	if(monitor_execution==1 &&  monitor_pid>0 )
+        	{
+		  printf("Monitorul functioneaza cu acest pid %d\n",monitor_pid);		  
+		}
+	 else
+	   {
+	            printf("Monitorul era/este pornit!\n");
+		  monitor_pid=fork();
+		  if(monitor_pid<0)
+		    {
+		      perror("Eroare la fork : ");
+		      exit(-1); 
+		    }
+		  monitor_execution=1;
+		  if(monitor_pid==0)
+		    {
+		      
+		      
+		    }
+	   }
+	 printf("\n\n--------------------------------------------------\n\n");
+      }
+    else
+      {
+          if(monitor_pid==-1)
+              {
+        	printf("Porneste monitorul pentru inceput!\n");
+        	exit(1);
+              }
+	   printf("Introduceti comenzile corespunzatoare:\n\n");
+          switch(command(buff))
+           {
+            case 2:printf("S-a optat pentru listarea hunts\n");
+              sendcommand("--list_hunts" );
+	       printf("\n\n--------------------------------------------------\n\n");
+              break;
+            case 3:printf("S-a optat pentru listarea treasure-urilor\n");
+	      printf("Introduceti numele huntului \n");
+              fgets(buff2,Max,stdin);
+              buff2[strcspn(buff2,"\n")]='\0';
+              snprintf(comprim, MAX,"--list_treasures %s\n", buff2);
+              sendcommand(comprim);
+	       printf("\n\n--------------------------------------------------\n\n");
+              break;
+            case 4:printf("S-a optat pentru vizualizarea treasure-ului specificat \n");
+              printf("Introduceti pentru inceput hunt-ul\n");
+              fgets(buff2,Max,stdin);
+              buff2[strcspn(buff2,"\n")]='\0';
+              printf("Introduceti acum treasure-ul cautat \n");
+              fgets(buf3,70,stdin);
+              buf3[strcspn(buf3,"\n")]='\0';
+              snprintf(comprim, MAX,"--view_treasure %s %s\n",buff2,buf3);
+              sendcommand(comprim);
+	       printf("\n\n--------------------------------------------------\n\n");
+           break;
+           case 5:printf("S-a optat pentru oprirea monitorului \n");
+	     snprintf(comprim,Max,"--stop_monitor");
+	     sendcommand(comprim);
+	     monitor_stop=1;
+	      printf("\n\n--------------------------------------------------\n\n");
+           break;
+           case 6:printf("S-a optat pentru oprirea fortata a procesului\n");
+	     if(monitor_pid!=0 && monitor_stop!=1)
+	       {
+		 if(monitor_stop!=1)
+		   { printf("Mai intai trebuie oprirea monitorului !!");
+		   }
+		  sendcommand("--stop_monitor");
+		  
+	       }
+	     else
+	       {
+		  printf("\n\n--------------------------------------------------\n\n");
+		 exit(0);
+	       }
+	     break;
+	   default:printf("Comanda necunoscuta \n");
+          }
+       }
+   
+       }
+  
   return 0;
 }
