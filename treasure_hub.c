@@ -13,6 +13,7 @@
 #include<sys/wait.h>
 #include<stdbool.h>
 #include"treasur.h"
+
 #define Max2 60
 #define Maxx2 260
 #define Max22 300
@@ -72,7 +73,7 @@ void handler_view_treasure()
 }
 void handler_list_treasures()
 {
-  printf("%s ",hunt); 
+  printf("hdhfhdf"); 
   if(monitor_stop==0)
     {
       list(hunt);
@@ -169,7 +170,7 @@ void setup(int sig)
 int main()
 { 
   printf("Urmatoarele comenzi disponibile pentru aceasta interfata sunt:\n\t start_monitor---pornirea monitorului,care este obligatorie:\n\t list_hunts---afiseaaza hunturile si numarul loc\n\t list_treasures---afiseaza toate treasure-urile din hunt-ul respectiv\n\t view_treasure---afiseaza detaliile legate de un treasure, dintr-un hunt\n\t stop_monitor---o actiune necesara la fial, de oprire a monitorului\n\t exit---o actiune care verifica daca monitorul inca ruleaza, in caz afirmativ printeaza o eroare, altfel il opreste\n\nIntroduceti comanda dorita:\n");
-  char buff[Max2], comprim[Max22];
+  char buff[Max2], comprim[Max22], buf2[Max2];
   while(1)
  {
   
@@ -208,7 +209,25 @@ int main()
 			    }
 			  if(usr2)
 			    {
-			     
+			      int fdd=open("fisier.txt",O_RDONLY,0666);
+			      if(fdd==-1)
+				{
+				  perror("ERoare la deschidere fisier \n");
+				}
+			      else
+				{
+				  ssize_t len=read(fdd,hunt,Max2-1);
+				  if(len>0)
+				    {
+				      hunt[len]='\0';
+				      hunt[strcspn(hunt,"\n")]='\0';
+				    }
+				  else
+				    {
+				      perror("Eroare la citirea din fisierul temporar \n");
+				    }
+				  close(fdd);
+				}
 			      handler_list_treasures();
 			      usr2=0;
 			    }
@@ -219,7 +238,26 @@ int main()
 			    }
 			  if(ing)
 			    {
-			     
+			       int fdd=open("fisier.txt",O_RDONLY,0666);
+			      if(fdd==-1)
+				{
+				  perror("ERoare la deschidere fisier \n");
+				}
+			      else
+				{
+				  ssize_t len=read(fdd,buf2,Max2-1);
+				  if(len>0)
+				    {
+				      buf2[strcspn(buf2,"\n")]='\0';
+				      int count=sscanf(buf2,"%s %s",hunt,tres);
+				      printf("Countul este %d ",count);
+				    }
+				  else
+				    {
+				      perror("Eroare la citirea din fisierul temporar \n");
+				    }
+				  close(fdd);
+				}
 			      handler_view_treasure();
 			      ing=0;
 			    }
@@ -246,6 +284,16 @@ int main()
 	      printf("Introduceti pentru inceput hunt-ul\n");
 	      fgets(hunt,Max2,stdin);
 	      hunt[strcspn(hunt,"\n")]='\0';
+	      int fdd=open("fisier.txt", O_WRONLY|O_CREAT|O_TRUNC, 0666);
+	      if(fdd==-1)
+		{
+		  perror("Eroare la deschiderea fisierului \n");
+		}
+	      else
+		{
+		  write(fdd,hunt,strlen(hunt));
+		  close(fdd);
+		}
 	      snprintf(comprim, Max22,"list_treasures %s\n",hunt);
 	      printf("%s",comprim);
 	      write_intxt(comprim);
@@ -259,6 +307,17 @@ int main()
        	        printf("Introduceti acum treasure-ul cautat \n");
 		fgets(tres,Max2,stdin);
 		tres[strcspn(tres,"\n")]='\0';
+		 int fdd=open("fisier.txt", O_WRONLY|O_CREAT|O_TRUNC, 0666);
+		 snprintf(buf2,Max2,"%s %s",hunt,tres);
+	      if(fdd==-1)
+		{
+		  perror("Eroare la deschiderea fisierului \n");
+		}
+	      else
+		{
+		  write(fdd,buf2,strlen(buf2));
+		  close(fdd);
+		}
 		snprintf(comprim, Max22,"view_treasure %s %s\n",hunt,tres);
 		printf("%s\n",comprim);
 		write_intxt(comprim);
@@ -273,7 +332,6 @@ int main()
 	     monitor_execution=0;
 	     monitor_stop=1;
 	      printf("\n\n--------------------------------------------------\n\n");
-	      exit(0);
            break;
            case 6:printf("S-a optat pentru oprirea fortata a procesului\n");
 	     if(monitor_pid!=0 && monitor_stop!=1)
@@ -285,11 +343,8 @@ int main()
 		 kill(monitor_pid,SIGTERM);
 		
 	       }
-	     else
-	       {
-		  printf("\n\n--------------------------------------------------\n\n");
-		 exit(0);
-	       }
+	     printf("Iesim din program\n");
+		  exit(0);
 	     break;
 	   default:printf("Comanda necunoscuta \n");
           }
