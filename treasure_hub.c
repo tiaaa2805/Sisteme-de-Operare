@@ -13,6 +13,7 @@
 #include<sys/wait.h>
 #include<stdbool.h>
 #include"treasur.h"
+#define FIFO_PATH "comenzi_fifo"
 #define Max2 260
 #define Max22 300
 struct stringtoValue{
@@ -35,6 +36,8 @@ volatile sig_atomic_t usr1=0;
 volatile sig_atomic_t usr2=0;
 volatile sig_atomic_t term=0;
 volatile sig_atomic_t ing=0;
+
+
 char  *readdetails()
 {
   int fd=open("comenzi.txt",O_RDONLY,S_IRUSR);
@@ -91,6 +94,7 @@ char  *readdetails()
   close(fd);
   return linie;
 }
+
 
 void write_intxt(const char *c)
 {
@@ -277,7 +281,7 @@ int main()
 		      setup(SIGTERM);
 		      setup(SIGINT);
 		      printf("Monitorul este pornit cu pidul urmator %d \n",getpid());
-		      while(monitor_pid==0)
+		      while(1)
 			{
 			  pause();
 			  if(usr1)
