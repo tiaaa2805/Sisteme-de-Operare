@@ -37,39 +37,55 @@ volatile sig_atomic_t term=0;
 volatile sig_atomic_t ing=0;
 char  *readdetails()
 {
-  static off_t ls=0;
   int fd=open("comenzi.txt",O_RDONLY,S_IRUSR);
   if(fd==-1)
     {
       perror("Eroare la deschiderea fisierului pentru citirea comenzilor\n");
       return NULL;
     }
-  if(lseek(fd,ls,SEEK_SET)==-1)
+  off_t poz=lseek(fd,0,SEEK_END);
+  if(poz==-1)
     {
       perror("Eroare la lseek");
       close(fd);
       return NULL;
     }
-  char *linie=malloc(Max2);
-  if(!linie)
+  
+  off_t i=poz-1;
+  char ch;
+  while(i>=0)
     {
-      perror("eroare la alocare ");
+      lseek(fd,i,SEEK_SET);
+      if(read(fd,&ch,1)!=1)
+	{
+	  break;
+	}
+      if(ch=='\n')
+	{
+	  i++;
+	  break;
+	}
+      i--;
+    }
+  int si=poz-i;
+  char *linie=malloc(Max22);
+  if(linie==NULL)
+    {
+      perror("Eroare la alocare \n");
       close(fd);
       return NULL;
     }
-  char ch;
-   int i=0;
-  while(read(fd,&ch,1)==1)
+  lseek(fd,i,SEEK_SET);
+  if(read(fd,linie,si)!=si)
     {
-      ls++;
-      if(ch=='\n' || i>255)
-	{
-	  linie[i]='\0';
-	  break;
-	}
-      linie[i++]=ch;
+      perror("eroare la citire\n");
+      free(linie);
+      close(fd);
+      return NULL;
     }
-    linie[i]='\0';
+    linie[si]='\0';
+    linie[strcspn(linie,"\n")]='\0';
+    
   printf("Comanda preluata din text este %s\n",linie);
   printf("\tNe ocupam de transmiterea detaliilor\n");
   close(fd);
@@ -124,7 +140,6 @@ void handler_view_treasure()
    len2++;
    tres=len2;
   printf("%s %s\n",hunt,tres);
- 
   if(monitor_stop==0)
     view(hunt,tres);
   else
@@ -159,7 +174,7 @@ void handler_list_directory()
 {
   char cale[Max22], director[Max2];
   DIR *fd=opendir(".");
-  write_intxt("list_hunts");
+  write_intxt("list_hunts\n");
   struct dirent *citim;
   if(fd)
     {
@@ -241,13 +256,13 @@ int main()
     buff[strcspn(buff, "\n")]='\0';
     if(command(buff)==1)
       {printf("Se verificam daca monitorul este pornit pentru inceput\n");
-
 	if(monitor_execution==1 &&  monitor_pid>0 )
         	{
 		  printf("Monitorul functioneaza cu acest pid %d\n",monitor_pid);		  
 		}
 	 else
 	   {  printf("Monitorul era/este pornit!\n");
+	     write_intxt("start_monitor\n");
 		  monitor_pid=fork();
 		  if(monitor_pid<0)
 		    {
@@ -305,7 +320,11 @@ int main()
 	       printf("\n\n--------------------------------------------------\n\n");
               break;
 	   case 3:printf("S-a optat pentru listarea treasure-urilor\n");
-	          
+	      printf("Introduceti pentru inceput hunt-ul\n");
+    fgets(buff2,50,stdin);
+    buff2[strcspn(buff2,"\n")]='\0';
+      snprintf(comprim, Max22,"list_treasures %s\n",buff2);
+    write_intxt(comprim);
               kill(monitor_pid,SIGUSR2);
 	       printf("\n\n--------------------------------------------------\n\n");
               break;
@@ -316,23 +335,24 @@ int main()
     printf("Introduceti acum treasure-ul cautat \n");
     fgets(buf3,50,stdin);
     buf3[strcspn(buf3,"\n")]='\0';
-    snprintf(comprim, Max22,"--view_treasure %s %s\n",buff2,buf3);
+    snprintf(comprim, Max22,"view_treasure %s %s\n",buff2,buf3);
     write_intxt(comprim);
               kill(monitor_pid,SIGINT);
 	       printf("\n\n--------------------------------------------------\n\n");
            break;
            case 5:printf("S-a optat pentru oprirea monitorului \n");
-	     write_intxt("stop_monitor");
+	     write_intxt("stop_monitor\n");
 	     kill(monitor_pid,SIGTERM);
 	     waitpid(monitor_pid,NULL,0);
 	     monitor_pid=-1;
 	     monitor_execution=0;
+	     monitor_stop=1;
 	      printf("\n\n--------------------------------------------------\n\n");
            break;
            case 6:printf("S-a optat pentru oprirea fortata a procesului\n");
 	     if(monitor_pid!=0 && monitor_stop!=1)
 	       {
-		 write_intxt("exit");
+		 write_intxt("exit\n");
 		 if(monitor_stop!=1)
 		   { printf("Mai intai trebuie oprirea monitorului !!");
 		   }
