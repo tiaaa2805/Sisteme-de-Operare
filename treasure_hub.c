@@ -36,8 +36,6 @@ volatile sig_atomic_t usr1=0;
 volatile sig_atomic_t usr2=0;
 volatile sig_atomic_t term=0;
 volatile sig_atomic_t ing=0;
-
-
 char  *readdetails()
 {
   int fd=open("comenzi.txt",O_RDONLY,S_IRUSR);
@@ -94,8 +92,6 @@ char  *readdetails()
   close(fd);
   return linie;
 }
-
-
 void write_intxt(const char *c)
 {
   int fd=open("comenzi.txt", O_WRONLY|O_APPEND|O_CREAT, 0666);
@@ -352,6 +348,7 @@ int main()
 	     monitor_execution=0;
 	     monitor_stop=1;
 	      printf("\n\n--------------------------------------------------\n\n");
+	      exit(0);
            break;
            case 6:printf("S-a optat pentru oprirea fortata a procesului\n");
 	     if(monitor_pid!=0 && monitor_stop!=1)
