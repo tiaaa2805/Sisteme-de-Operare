@@ -216,7 +216,7 @@ int main()
 		  if(monitor_pid==0)
 		    {
 		      close(pipe_2[0]);
-		      dup2(pipe_2[1],STDOUT_FILEON);
+		      dup2(pipe_2[1],STDOUT_FILENO);
 		      close(pipe_2[1]);
 		      
 		      setup(SIGUSR1);
@@ -291,7 +291,7 @@ int main()
 		    }
 		  else
 		    {
-		      close[pipe_2[1]);
+		      close(pipe_2[1]);
 		    }
 	   }
 	 printf("\n\n--------------------------------------------------\n\n");
@@ -363,7 +363,7 @@ int main()
 	     write_intxt("stop_monitor\n");
 	     kill(monitor_pid,SIGTERM);
 	     usleep(1000000);
-	     cirire_output();
+	     citire_output();
 	     waitpid(monitor_pid,NULL,0);
 	     monitor_pid=-1;
 	     monitor_execution=0;
