@@ -9,7 +9,7 @@ typedef struct{
   double latitudine;
 }gps;
 typedef struct{
-  int id;
+  char id[MAX];
   char name[MAX];
   gps coordonate;
   char clue[MAXCLUE];
@@ -25,6 +25,6 @@ int add(treasure *tr, const char *hunt);
 void list(const char *hunt);
 void view(const char *hunt, const char *trea);
 void remove_hunt(const char *hunt);
-void remove_treasure(const char *hunt, int id);
+void remove_treasure(const char *hunt,const char *id);
 
 #endif

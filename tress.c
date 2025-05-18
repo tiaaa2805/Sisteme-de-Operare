@@ -87,9 +87,9 @@ int adaugarea(treasure *tr)
 {
   double a,b;
    printf("Introduceti id ul\n");
-      scanf("%d",&tr->id);
+      scanf("%49s",tr->id);
       printf("Introduceti numele \n");
-      scanf("%s",tr->name);
+      scanf("%49s",tr->name);
       printf("Coordonatele corecte, cuprinse in intervalele latitudinea-(-90.00,90.00) si longitudinea-(-180.00,180.0) \nATENTIE! TREBUIE SA FIE DE FORMA x y, cu spatiu intre ele\n");
       scanf("%lg %lg", &a, &b);
       if(checkcoordonate(a,b)==false)
@@ -186,7 +186,7 @@ void list(const char *hunt)
   lseek(fd,0,SEEK_SET);
   while(read(fd,&t,sizeof(treasure))==sizeof(treasure))
     {
-      printf("Treasure id : %d \n Numele : %s \n Clue : %s\n Value : %d \n Coordonatele : %f,%f \n\n", t.id, t.name,t.clue,t.value,t.coordonate.longitudine, t.coordonate.latitudine);
+      printf("Treasure id : %s \n Numele : %s \n Clue : %s\n Value : %d \n Coordonatele : %f,%f \n\n", t.id, t.name,t.clue,t.value,t.coordonate.longitudine, t.coordonate.latitudine);
       printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     }
   int nr=nrtreasure(fd);
@@ -228,7 +228,7 @@ char sir[MAXSTR],sir1[MAXSTR];
     {numarare++;
       if(strcmp(t.name,trea)==0)
 	{
-	  printf("Treasure id : %d \n Numele : %s \n Clue : %s\n Value : %d \n Coordonatele : %f,%f \n\n", t.id, t.name,t.clue,t.value,t.coordonate.longitudine, t.coordonate.latitudine);
+	  printf("Treasure id : %s \n Numele : %s \n Clue : %s\n Value : %d \n Coordonatele : %f,%f \n\n", t.id, t.name,t.clue,t.value,t.coordonate.longitudine, t.coordonate.latitudine);
 	  ok=1;
 	  break;
 	}
@@ -301,7 +301,7 @@ void remove_hunt(const char *hunt)
   printf("--------------------------------------------------\n");
   
 }
-void remove_treasure(const char *hunt, int id)
+void remove_treasure(const char *hunt, const char *id)
 {
   printf("--------------------------------------------------\n");
   char ss[MAXSTR];
@@ -334,7 +334,7 @@ void remove_treasure(const char *hunt, int id)
    treasure *all=(treasure*)malloc(sizeof(treasure)*nr);
   while(read(fd,&tr,sizeof(treasure))==sizeof(treasure))
     {
-      if(tr.id==id)
+      if(strcmp(tr.id,id)==0)
 	{
 	  ok=0;
 	}
@@ -350,7 +350,7 @@ void remove_treasure(const char *hunt, int id)
       lseek(fd,0,SEEK_SET);
       write(fd,all,n*sizeof(treasure));
       ftruncate(fd,n*sizeof(treasure));
-      printf("Am sters cu succes treasure-ul cu id ul %d \n",id);
+      printf("Am sters cu succes treasure-ul cu id ul %s \n",id);
     }
   free(all);
   close(fd);

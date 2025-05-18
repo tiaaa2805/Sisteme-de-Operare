@@ -66,12 +66,10 @@ int main(int argc, char *argv[])
 			   }
 			 else {
 			   if(strcmp(operatia,"--remove_treasure")==0)
-			     {int idd;
+			     {
 				     printf("Ati optat pentru stergerea unui treasure din huntul %s\n",hunt);
-				       
-				      idd=atoi(treas);
 				      istoric_log(hunt,use,"--remove_treasure");
-				     remove_treasure(hunt,idd);
+				     remove_treasure(hunt,treas);
 				    
 				   }
 			 
