@@ -223,7 +223,7 @@ int main()
 		      setup(SIGUSR2);
 		      setup(SIGTERM);
 		      setup(SIGINT);
-		      printf("Monitorul este pornit cu pidul urmator %d \n",getpid());
+		   
 		      while(1)
 			{
 			  pause();
@@ -292,6 +292,7 @@ int main()
 		  else
 		    {
 		      close(pipe_2[1]);
+		         printf("Monitorul este pornit cu pidul urmator %d \n",getpid());
 		    }
 	   }
 	 printf("\n\n--------------------------------------------------\n\n");
