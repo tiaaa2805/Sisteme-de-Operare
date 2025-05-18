@@ -161,6 +161,7 @@ void list(const char *hunt)
   char sir[MAXSTR],sir1[MAXSTR];
   struct stat st1;
     snprintf(sir1,MAXSTR,"%s",hunt);
+ 
     if(stat(sir1,&st1)!=0){
       perror("Eroare la director ");
       return;

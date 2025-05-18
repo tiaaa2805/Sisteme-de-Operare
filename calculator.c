@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 {
   if(argc<3)
     {
-      printf("Trebuiau introduse numele hunt-ului, numele utilizatorului si numele treasure-lui\n");
+      printf("Trebuiau introduse numele hunt-ului si numele treasure-lui\n");
       exit(-1);
     }
   char *hunt=argv[1];

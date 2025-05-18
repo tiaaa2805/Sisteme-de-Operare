@@ -27,7 +27,8 @@ struct stringtoValue words[]={
   {"list_treasures",3},
   {"view_treasure",4},
   {"stop_monitor",5},
-  {"exit",6}
+  {"exit",6},
+  {"calculate_score",7}
 };
 pid_t monitor_pid=-1;
 volatile sig_atomic_t monitor_execution=0;
@@ -169,8 +170,8 @@ void setup(int sig)
 }
 int main()
 { 
-  printf("Urmatoarele comenzi disponibile pentru aceasta interfata sunt:\n\t start_monitor---pornirea monitorului,care este obligatorie:\n\t list_hunts---afiseaaza hunturile si numarul loc\n\t list_treasures---afiseaza toate treasure-urile din hunt-ul respectiv\n\t view_treasure---afiseaza detaliile legate de un treasure, dintr-un hunt\n\t stop_monitor---o actiune necesara la fial, de oprire a monitorului\n\t exit---o actiune care verifica daca monitorul inca ruleaza, in caz afirmativ printeaza o eroare, altfel il opreste\n\nIntroduceti comanda dorita:\n");
-  char buff[Max2], comprim[Max22], buf2[Max2];
+  printf("Urmatoarele comenzi disponibile pentru aceasta interfata sunt:\n\t start_monitor---pornirea monitorului,care este obligatorie:\n\t list_hunts---afiseaaza hunturile si numarul loc\n\t list_treasures---afiseaza toate treasure-urile din hunt-ul respectiv\n\t view_treasure---afiseaza detaliile legate de un treasure, dintr-un hunt\n\t stop_monitor---o actiune necesara la fial, de oprire a monitorului\n\t exit---o actiune care verifica daca monitorul inca ruleaza, in caz afirmativ printeaza o eroare, altfel il opreste\n\t calculate_score--- calculeaza scorul per hunt\nIntroduceti comanda dorita:\n");
+  char buff[Max2], comprim[Max22], buf2[Maxx2];
   while(1)
  {
   
@@ -307,8 +308,8 @@ int main()
        	        printf("Introduceti acum treasure-ul cautat \n");
 		fgets(tres,Max2,stdin);
 		tres[strcspn(tres,"\n")]='\0';
-		 int fdd=open("fisier.txt", O_WRONLY|O_CREAT|O_TRUNC, 0666);
-		 snprintf(buf2,Max2,"%s %s",hunt,tres);
+		fdd=open("fisier.txt", O_WRONLY|O_CREAT|O_TRUNC, 0666);
+		 snprintf(buf2,Maxx2,"%s %s",hunt,tres);
 	      if(fdd==-1)
 		{
 		  perror("Eroare la deschiderea fisierului \n");
@@ -332,25 +333,68 @@ int main()
 	     monitor_execution=0;
 	     monitor_stop=1;
 	      printf("\n\n--------------------------------------------------\n\n");
+	      printf("Inchidem monitorul\n");
+	      exit(0);
            break;
            case 6:printf("S-a optat pentru oprirea fortata a procesului\n");
 	     if(monitor_pid!=0 && monitor_stop!=1)
 	       {
 		 write_intxt("exit\n");
 		 if(monitor_stop!=1)
-		   { printf("Mai intai trebuie oprirea monitorului !!");
+		   { printf("Mai intai trebuie oprirea monitorului!!\n");
 		   }
-		 kill(monitor_pid,SIGTERM);
-		
 	       }
 	     printf("Iesim din program\n");
 		  exit(0);
 	     break;
+	   case 7:printf("Introduceti numele hunt-ului asupra caruia se calculeaza scorul \n");
+	     fgets(hunt,Max2,stdin);
+	     printf("Hunt-ul este %s\n",hunt);
+	     hunt[strcspn(hunt,"\n")]='\0';
+	     printf("Introduceti treasure-ul\n");
+	     fgets(tres,Max2,stdin);
+	     printf("treasure-ul este %s \n",tres);
+	     tres[strcspn(tres,"\n")]='\0';
+	     snprintf(comprim,Maxx2,"calculate_score %s %s",hunt,tres);
+	     write_intxt(comprim);
+	     int ff[2];
+	     if(pipe(ff)==-1)
+	       {
+		 perror("eroare la pipe ");
+		 break;
+	       }
+	     pid_t pp=fork();
+	     if(pp<0)
+	       {
+		 perror("Eroare la fork ");
+		 break;
+	       }
+	     if(pp==0)
+	       {
+		 close(ff[0]);
+		 dup2(ff[1],STDOUT_FILENO);
+		 close(ff[1]);
+		 execl("./calculator", "calculator", hunt,tres,NULL);
+		 perror("Eroare la trimitere\n");
+		 exit(1);
+	       }
+	     else
+	       {
+		 close(ff[1]);
+		 char bufi[256];
+		 ssize_t n;
+		 while((n=read(ff[0],bufi,sizeof(bufi)-1))>0)
+		   {
+		     bufi[n]='\0';
+		     printf("%s ",bufi);
+		   }
+		 close(ff[0]);
+		 waitpid(pp,NULL,0);
+	       }
+	     break;
 	   default:printf("Comanda necunoscuta \n");
           }
        }
-   
        }
- 
   return 0;
 }
