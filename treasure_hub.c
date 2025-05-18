@@ -12,8 +12,8 @@
 #include<limits.h>
 #include<sys/wait.h>
 #include<stdbool.h>
-#include"treasur.h"
 
+#include"treasur.h"
 #define Max2 60
 #define Maxx2 260
 #define Max22 300
@@ -40,6 +40,7 @@ volatile sig_atomic_t term=0;
 volatile sig_atomic_t ing=0;
 
 char hunt[Max2], tres[Max2];
+ int pipe_2[2];
 void write_intxt(const char *c)
 {
   int fd=open("comenzi.txt", O_WRONLY|O_APPEND|O_CREAT, 0666);
@@ -168,10 +169,28 @@ void setup(int sig)
   sa.sa_flags=SA_RESTART;
   sigaction(sig,&sa,NULL);
 }
+void citire_output()
+{
+  char buf[512];
+  ssize_t n;
+  while((n=read(pipe_2[0],buf,sizeof(buf)-1))>0)
+    {
+      buf[n]='\0';
+      printf("%s ",buf);
+    }
+}
 int main()
 { 
   printf("Urmatoarele comenzi disponibile pentru aceasta interfata sunt:\n\t start_monitor---pornirea monitorului,care este obligatorie:\n\t list_hunts---afiseaaza hunturile si numarul loc\n\t list_treasures---afiseaza toate treasure-urile din hunt-ul respectiv\n\t view_treasure---afiseaza detaliile legate de un treasure, dintr-un hunt\n\t stop_monitor---o actiune necesara la fial, de oprire a monitorului\n\t exit---o actiune care verifica daca monitorul inca ruleaza, in caz afirmativ printeaza o eroare, altfel il opreste\n\t calculate_score--- calculeaza scorul per hunt\nIntroduceti comanda dorita:\n");
   char buff[Max2], comprim[Max22], buf2[Maxx2];
+
+   if(pipe(pipe_2)==-1)
+     {
+       perror("pipe");
+       exit(1);
+     }
+   int f=fcntl(pipe_2[0],F_GETFL,0);
+   fcntl(pipe_2[0],F_SETFL,f|O_NONBLOCK);
   while(1)
  {
   
@@ -186,6 +205,7 @@ int main()
 	 else
 	   {  printf("Monitorul era/este pornit!\n");
 	     write_intxt("start_monitor\n");
+	    
 		  monitor_pid=fork();
 		  if(monitor_pid<0)
 		    {
@@ -195,6 +215,10 @@ int main()
 		  monitor_execution=1;
 		  if(monitor_pid==0)
 		    {
+		      close(pipe_2[0]);
+		      dup2(pipe_2[1],STDOUT_FILEON);
+		      close(pipe_2[1]);
+		      
 		      setup(SIGUSR1);
 		      setup(SIGUSR2);
 		      setup(SIGTERM);
@@ -265,6 +289,10 @@ int main()
 			}
 		      exit(0);
 		    }
+		  else
+		    {
+		      close[pipe_2[1]);
+		    }
 	   }
 	 printf("\n\n--------------------------------------------------\n\n");
       }
@@ -279,6 +307,8 @@ int main()
            {
             case 2:printf("S-a optat pentru listarea hunts\n");  
                kill(monitor_pid,SIGUSR1);
+	       usleep(1000000);
+	       citire_output();
 	       printf("\n\n--------------------------------------------------\n\n");
               break;
 	   case 3:printf("S-a optat pentru listarea treasure-urilor\n");
@@ -299,6 +329,8 @@ int main()
 	      printf("%s",comprim);
 	      write_intxt(comprim);
               kill(monitor_pid,SIGUSR2);
+	      usleep(1000000);
+	      citire_output();
 	       printf("\n\n--------------------------------------------------\n\n");
               break;
             case 4:printf("S-a optat pentru vizualizarea treasure-ului specificat \n");
@@ -323,15 +355,23 @@ int main()
 		printf("%s\n",comprim);
 		write_intxt(comprim);
               kill(monitor_pid,SIGINT);
+	      usleep(1000000);
+	      citire_output();
 	       printf("\n\n--------------------------------------------------\n\n");
            break;
            case 5:printf("S-a optat pentru oprirea monitorului \n");
 	     write_intxt("stop_monitor\n");
 	     kill(monitor_pid,SIGTERM);
+	     usleep(1000000);
+	     cirire_output();
 	     waitpid(monitor_pid,NULL,0);
 	     monitor_pid=-1;
 	     monitor_execution=0;
 	     monitor_stop=1;
+	     close(pipe_2[0]);
+	     close(pipe_2[1]);
+	     pipe_2[0]=-1;
+	     pipe_2[1]=-1;
 	      printf("\n\n--------------------------------------------------\n\n");
 	      printf("Inchidem monitorul\n");
 	      exit(0);
@@ -394,7 +434,7 @@ int main()
 	     break;
 	   default:printf("Comanda necunoscuta \n");
           }
-       }
-       }
+      }
+ }
   return 0;
 }
